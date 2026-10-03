@@ -115,9 +115,14 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <!-- Tombol Install PWA -->
-                    <button id="btn-install-pwa" onclick="installPwaApp()" class="hidden bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition">
-                        📲 Install App
+                    <!-- Tombol Install PWA Mobile (Mirip Tracker Keuangan) -->
+                    <button
+                        id="btn-install-pwa-mobile"
+                        onclick="installPwaApp()"
+                        class="btn-install-pwa hidden bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-extrabold px-2.5 py-1.5 rounded-lg text-[10px] sm:text-xs shadow-sm transition whitespace-nowrap"
+                        title="Install Aplikasi di HP"
+                    >
+                        📲 Install di HP
                     </button>
                     <!-- Target Skor Pill (Mobile) -->
                     <button onclick="switchTab('tryout')" class="sm:hidden bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1 rounded-lg text-right shrink-0 transition">
@@ -127,19 +132,31 @@
                 </div>
             </div>
 
-            <!-- Navigasi 3 Tab Desktop / Tablet -->
-            <div class="hidden sm:flex items-center space-x-1.5 shrink-0 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
-                <button onclick="switchTab('tracker')" id="btn-tracker" class="px-3.5 py-2 rounded-lg text-xs font-bold transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
-                    <span>📋</span>
-                    <span>Progres Harian &amp; Error Log</span>
-                </button>
-                <button onclick="switchTab('tryout')" id="btn-tryout" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1.5">
-                    <span>🎯</span>
-                    <span>Target, Kampus &amp; Tryout</span>
-                </button>
-                <button onclick="switchTab('schedule')" id="btn-schedule" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1.5">
-                    <span>🗺️</span>
-                    <span>Roadmap &amp; Silabus Materi</span>
+            <!-- Navigasi 3 Tab Desktop / Tablet & Tombol Desktop Install (Mirip Tracker Keuangan) -->
+            <div class="hidden sm:flex items-center gap-2 shrink-0">
+                <div class="flex items-center space-x-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+                    <button onclick="switchTab('tracker')" id="btn-tracker" class="px-3.5 py-2 rounded-lg text-xs font-bold transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
+                        <span>📋</span>
+                        <span>Progres Harian &amp; Error Log</span>
+                    </button>
+                    <button onclick="switchTab('tryout')" id="btn-tryout" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1.5">
+                        <span>🎯</span>
+                        <span>Target, Kampus &amp; Tryout</span>
+                    </button>
+                    <button onclick="switchTab('schedule')" id="btn-schedule" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1.5">
+                        <span>🗺️</span>
+                        <span>Roadmap &amp; Silabus Materi</span>
+                    </button>
+                </div>
+                <!-- Tombol Install PWA Desktop -->
+                <button
+                    id="btn-install-pwa"
+                    onclick="installPwaApp()"
+                    class="btn-install-pwa hidden bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-extrabold px-3 py-2 rounded-xl text-xs shadow-sm transition whitespace-nowrap flex items-center gap-1.5"
+                    title="Install Aplikasi di HP / Desktop"
+                >
+                    <span>📲</span>
+                    <span>Install di HP</span>
                 </button>
             </div>
         </div>
@@ -3164,29 +3181,82 @@
             renderScheduleTab();
         }
 
-        // PWA Install Prompt
-        let deferredPrompt;
+        // =========================================================================
+        // PWA INSTALLATION SYSTEM (PERSIS MODEL TRACKER KEUANGAN)
+        // =========================================================================
+        let deferredPwaPrompt = null;
+
+        function isRunningStandaloneApp() {
+            return (
+                window.matchMedia('(display-mode: standalone)').matches ||
+                window.navigator.standalone === true
+            );
+        }
+
+        function updatePwaInstallButtonsVisibility(show) {
+            document.querySelectorAll('.btn-install-pwa').forEach((btn) => {
+                if (show && !isRunningStandaloneApp()) {
+                    btn.classList.remove('hidden');
+                } else {
+                    btn.classList.add('hidden');
+                }
+            });
+        }
+
+        function initPwaInstallButton() {
+            if (isRunningStandaloneApp()) {
+                updatePwaInstallButtonsVisibility(false);
+                return;
+            }
+            // Tampilkan tombol Install di HP selama dibuka di browser biasa
+            updatePwaInstallButtonsVisibility(true);
+        }
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
-            deferredPrompt = e;
-            const btn = document.getElementById('btn-install-pwa');
-            if (btn) btn.classList.remove('hidden');
+            deferredPwaPrompt = e;
+            updatePwaInstallButtonsVisibility(true);
         });
 
-        function installPwaApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => {
-                    deferredPrompt = null;
-                    const btn = document.getElementById('btn-install-pwa');
-                    if (btn) btn.classList.add('hidden');
-                });
+        window.addEventListener('appinstalled', () => {
+            deferredPwaPrompt = null;
+            updatePwaInstallButtonsVisibility(false);
+            if (typeof showToast === 'function') {
+                showToast('Aplikasi UTBK Tracker berhasil di-install di perangkat Anda!', 'success');
+            }
+        });
+
+        async function installPwaApp() {
+            if (deferredPwaPrompt) {
+                deferredPwaPrompt.prompt();
+                const choiceResult = await deferredPwaPrompt.userChoice;
+                deferredPwaPrompt = null;
+                if (choiceResult && choiceResult.outcome === 'accepted') {
+                    updatePwaInstallButtonsVisibility(false);
+                }
+                return;
+            }
+
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            if (isIOS) {
+                showToast(
+                    'Untuk install di iPhone/iPad: Ketuk ikon Share (kotak panah atas) di bawah Safari lalu pilih "Add to Home Screen / Tambah ke Layar Utama".',
+                    'info',
+                    6000
+                );
+            } else {
+                showToast(
+                    'Untuk meng-install aplikasi: Ketuk ikon Titik Tiga (⋮) di pojok kanan atas Chrome lalu pilih "Instal aplikasi / Tambahkan ke Layar Utama".',
+                    'info',
+                    6000
+                );
             }
         }
 
         window.onload = function() {
             initEvergreenEdition();
             initInputs();
+            initPwaInstallButton();
             renderAll();
             switchTab(activeTab);
 
