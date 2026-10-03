@@ -1,0 +1,2581 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="UTBK Tracker">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>UTBK Study Schedule & Progress Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+            max-width: 100%;
+            width: 100%;
+        }
+        /* Mencegah auto-zoom di iOS/Android saat klik input di layar HP */
+        @media (max-width: 640px) {
+            input, select, textarea { font-size: 16px !important; }
+        }
+        /* Custom scrollbar halus untuk dropdown pencarian PTN/Jurusan */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Animasi Mengambang Organik & Detak Jantung (Heartbeat) untuk Tombol Love QRIS */
+        @keyframes floatLoveOrganic {
+            0%, 100% {
+                transform: translateY(0px) rotate(-3deg);
+            }
+            25% {
+                transform: translateY(-6px) rotate(2deg);
+            }
+            50% {
+                transform: translateY(-3px) rotate(4deg);
+            }
+            75% {
+                transform: translateY(-7px) rotate(-2deg);
+            }
+        }
+        @keyframes heartBeatIcon {
+            0%, 100% { transform: scale(1); }
+            14% { transform: scale(1.24); }
+            28% { transform: scale(0.95); }
+            42% { transform: scale(1.16); }
+            70% { transform: scale(1); }
+        }
+        @keyframes loveAuraRipple {
+            0% {
+                transform: scale(0.95);
+                opacity: 0.75;
+            }
+            70% {
+                transform: scale(1.55);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1.65);
+                opacity: 0;
+            }
+        }
+        @keyframes miniHeartFloat {
+            0% {
+                transform: translateY(0) scale(0.6) rotate(-10deg);
+                opacity: 0;
+            }
+            30% {
+                opacity: 0.95;
+            }
+            100% {
+                transform: translateY(-22px) scale(1.1) rotate(12deg);
+                opacity: 0;
+            }
+        }
+        .floating-love-btn {
+            animation: floatLoveOrganic 3.8s ease-in-out infinite;
+            box-shadow: 0 10px 25px -4px rgba(244, 63, 94, 0.6);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
+        .floating-love-btn::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #fb7185, #e11d48);
+            z-index: -1;
+            animation: loveAuraRipple 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+            pointer-events: none;
+        }
+        .floating-love-btn:hover {
+            animation-play-state: paused;
+            transform: translateY(-3px) scale(1.12) rotate(0deg);
+            box-shadow: 0 14px 30px -4px rgba(244, 63, 94, 0.8);
+        }
+        .floating-love-btn:active {
+            transform: scale(0.9);
+        }
+        .heart-beat-svg {
+            animation: heartBeatIcon 1.8s ease-in-out infinite;
+        }
+        .mini-floating-heart {
+            animation: miniHeartFloat 2.4s ease-out infinite;
+            pointer-events: none;
+        }
+
+        /* Animasi Pop-Up Modal Springy (Tidak Kaku) & Staggered Content */
+        #qris-donate-modal {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.28s ease-out;
+        }
+        #qris-donate-modal.qris-modal-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #qris-donate-card {
+            transform: scale(0.82) translateY(28px);
+            opacity: 0;
+            transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.28s ease-out;
+        }
+        #qris-donate-modal.qris-modal-open #qris-donate-card {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        .qris-stagger-item {
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 0.38s ease-out, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        #qris-donate-modal.qris-modal-open .qris-stagger-1 {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.08s;
+        }
+        #qris-donate-modal.qris-modal-open .qris-stagger-2 {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.16s;
+        }
+        #qris-donate-modal.qris-modal-open .qris-stagger-3 {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.24s;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-20 sm:pb-8 overflow-x-hidden w-full max-w-full">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50 w-full">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex items-center justify-between w-full sm:w-auto gap-2 min-w-0">
+                <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+                    <img src="icon-192.png" alt="Logo UTBK Tracker" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg shadow-sm border border-slate-700 shrink-0 object-cover">
+                    <div id="header-utbk-year-badge" class="bg-blue-600 text-white font-extrabold px-2 py-1 rounded-lg text-[11px] sm:text-sm shrink-0">UTBK 2027</div>
+                    <div class="min-w-0 flex-1">
+                        <h1 class="text-sm sm:text-xl font-bold tracking-tight leading-tight truncate">Progres Tracker</h1>
+                        <p class="text-[11px] sm:text-xs text-slate-400 truncate" id="header-ptn-subtitle">Persiapan UTBK-SNBT • Real-Time Disiplin</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <!-- Tombol Install Aplikasi (Otomatis muncul di HP/Browser jika belum di-install) -->
+                    <button id="btn-install-pwa" onclick="installPwaApp()" class="hidden bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs shadow-sm transition">
+                        📲 Install App
+                    </button>
+                    <!-- Badge Target Skor di Pojok Kanan Header HP -->
+                    <button onclick="switchTab('tryout')" class="sm:hidden bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg text-right shrink-0">
+                        <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold leading-none">Target Skor</div>
+                        <div id="header-mobile-target" class="text-xs font-extrabold text-amber-400 leading-tight mt-0.5">650</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigasi Desktop / Tablet (3 Tab Terpisah) -->
+            <div class="hidden sm:flex space-x-2 shrink-0">
+                <button onclick="switchTab('tracker')" id="btn-tracker" class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-blue-600 text-white">
+                    📋 Progres
+                </button>
+                <button onclick="switchTab('tryout')" id="btn-tryout" class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+                    🎯 Target & TO
+                </button>
+                <button onclick="switchTab('schedule')" id="btn-schedule" class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+                    📅 Jadwal
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- TOMBOL MENGAMBANG (FLOATING) LOGO LOVE DI POJOK KANAN ATAS TEPAT DI BAWAH TARGET SKOR -->
+    <button
+        type="button"
+        id="btn-floating-qris-love"
+        onclick="openQrisDonateModal()"
+        aria-label="Donasi Seikhlasnya & Kotak Saran"
+        title="Donasi Seikhlasnya (QRIS) & Diskusi Saran"
+        class="floating-love-btn fixed top-[58px] right-3 sm:top-[66px] sm:right-5 z-40 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-rose-500 via-pink-500 to-rose-600 text-white border-2 border-white/95 flex items-center justify-center cursor-pointer focus:outline-none"
+    >
+        <!-- Partikel Mini Love Mengambang Halus -->
+        <span class="mini-floating-heart absolute -top-1 -left-1 text-rose-400 text-[10px] select-none" style="animation-delay: 0s;">♥</span>
+        <span class="mini-floating-heart absolute -top-1.5 -right-1 text-pink-400 text-[9px] select-none" style="animation-delay: 1.2s;">♥</span>
+
+        <!-- Logo Love (Heart SVG Berdetak Halus) -->
+        <svg class="heart-beat-svg w-5 h-5 sm:w-6 sm:h-6 fill-current drop-shadow-sm" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <span class="absolute -bottom-1.5 bg-white text-rose-600 border border-rose-200 font-extrabold text-[8px] sm:text-[9px] px-1.5 py-0.2 rounded-full shadow-sm leading-tight tracking-tight">
+            QRIS
+        </span>
+    </button>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full px-3 py-4 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
+
+        <!-- BANNER REMINDER & ESTIMASI UTBK (OTOMATIS MENGIKUTI GENERASI TAHUN CAMABA) -->
+        <div class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-800">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div class="space-y-1">
+                    <div class="inline-flex items-center space-x-2 bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold">
+                        <span id="banner-edition-badge">⏳ Estimasi Pelaksanaan UTBK-SNBT</span>
+                    </div>
+                    <h2 class="text-base sm:text-xl font-bold" id="banner-exam-date-title">Perkiraan Ujian: 21 – 30 April</h2>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed" id="banner-exam-desc">
+                        Pola resmi SNPMB: <strong>Pendaftaran</strong> akhir Maret – awal April, <strong>Ujian Gelombang 1 & 2</strong> akhir April, dan <strong>Pengumuman</strong> Mei.
+                    </p>
+                </div>
+                <!-- Statistik Utama: Responsif 3 Kolom di HP & Desktop -->
+                <div class="grid grid-cols-3 gap-2 w-full lg:w-auto bg-slate-800/90 p-3 rounded-xl border border-slate-700 shrink-0 text-center">
+                    <div class="px-1 sm:px-3">
+                        <div id="countdown-days" class="text-xl sm:text-3xl font-extrabold text-amber-400">--</div>
+                        <div class="text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-300 font-medium">Hari Lagi</div>
+                    </div>
+                    <div class="px-1 sm:px-3 border-x border-slate-700">
+                        <div id="total-all-hours" class="text-xl sm:text-3xl font-extrabold text-emerald-400">0</div>
+                        <div class="text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-300 font-medium">Total Jam</div>
+                    </div>
+                    <div class="px-1 sm:px-3 cursor-pointer" onclick="switchTab('tryout')">
+                        <div id="banner-target-score" class="text-xl sm:text-3xl font-extrabold text-sky-400">650</div>
+                        <div class="text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-300 font-medium">Target Skor</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 1: PROGRES & CHECKLIST HARIAN (STRICT REAL-TIME LOCK)           -->
+        <!-- =================================================================== -->
+        <div id="tab-tracker" class="space-y-4 sm:space-y-6">
+
+            <!-- REMINDER HARIAN: HARI INI, BESOK & PROGRES BULAN BERJALAN -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <!-- Hari Ini -->
+                <div class="bg-white rounded-xl p-3.5 sm:p-4 border-l-4 border-blue-600 shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">📌 Hari Ini (Wajib)</span>
+                        <span id="today-status-badge" class="text-[11px] sm:text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700">Belum Selesai</span>
+                    </div>
+                    <div class="my-2">
+                        <div id="today-day-name" class="font-bold text-slate-900 text-sm sm:text-base">-</div>
+                        <div id="today-task-desc" class="text-xs text-slate-500 line-clamp-2 sm:line-clamp-1">-</div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-500">Durasi Hari Ini:</span>
+                        <span id="today-hours-display" class="font-bold text-blue-700 text-sm">0 Jam</span>
+                    </div>
+                </div>
+
+                <!-- Besok -->
+                <div class="bg-white rounded-xl p-3.5 sm:p-4 border-l-4 border-amber-500 shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded">⏭️ Rencana Besok</span>
+                        <span class="text-[11px] text-slate-400">Persiapan</span>
+                    </div>
+                    <div class="my-2">
+                        <div id="tomorrow-day-name" class="font-bold text-slate-900 text-sm sm:text-base">-</div>
+                        <div id="tomorrow-task-desc" class="text-xs text-slate-500 line-clamp-2 sm:line-clamp-1">-</div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-500">Rekomendasi Besok:</span>
+                        <span id="tomorrow-hours-display" class="font-bold text-amber-700 text-sm">0 Jam</span>
+                    </div>
+                </div>
+
+                <!-- Ringkasan Bulan Berjalan -->
+                <div class="bg-white rounded-xl p-3.5 sm:p-4 border-l-4 border-emerald-500 shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded" id="summary-month-badge">📊 Progres Bulan Ini</span>
+                        <span id="monthly-percent-badge" class="text-xs font-bold text-emerald-700">0%</span>
+                    </div>
+                    <div class="my-2 space-y-1.5">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-500">Hari Terpenuhi:</span>
+                            <span id="progress-text" class="font-bold text-slate-800">0 / 30 Hari</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div id="monthly-progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-500">Total Jam Bulan Ini:</span>
+                        <span id="monthly-hours-display" class="font-bold text-emerald-700 text-sm">0 Jam</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRACKER PROGRES LINGKARAN PER BULAN (MUTLAK & TIDAK BISA DIUBAH MASA LALU) -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-3 sm:mb-4">
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold text-slate-900" id="monthly-circles-heading">Rekam Jejak Progres Bulanan Menuju UTBK</h2>
+                        <p class="text-xs text-slate-500">Bulan yang sudah terlewat bersifat mutlak (terkunci permanen) dan tidak dapat diulang kembali.</p>
+                    </div>
+                    <span class="text-[11px] sm:text-xs text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg font-semibold w-fit">
+                        NB: Semua progres tidak bisa diulang, manfaatkan waktu sebaik mungkin
+                    </span>
+                </div>
+
+                <div id="monthly-circles-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 sm:gap-3">
+                    <!-- Di-generate via JS -->
+                </div>
+            </div>
+
+            <!-- CHECKLIST & DURASI JAM BELAJAR HARIAN (OTOMATIS HARI INI, TANPA DROPDOWN & TANPA RESET) -->
+            <div id="checklist-section" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 border-b border-slate-100 pb-3.5">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900" id="table-title">Checklist Belajar Hari Ini</h2>
+                        <p class="text-xs text-slate-500">Hanya baris tanggal <strong>Hari Ini</strong> yang dapat diisi. Hari yang sudah lewat otomatis terkunci permanen.</p>
+                    </div>
+                    <div class="bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 flex items-center gap-2">
+                        <span>📅 Tanggal Aktif:</span>
+                        <span id="realtime-today-label" class="text-amber-400">-</span>
+                    </div>
+                </div>
+
+                <!-- TAMPILAN MOBILE (HP): KARTU HARIAN RAPI (< 768px) -->
+                <div id="tracker-mobile-cards" class="block md:hidden space-y-3">
+                    <!-- Di-generate via JS -->
+                </div>
+
+                <!-- TAMPILAN DESKTOP / TABLET: TABEL SPREADSHEET (>= 768px) -->
+                <div class="hidden md:block overflow-x-auto border border-slate-200 rounded-lg">
+                    <table class="w-full text-left border-collapse" id="tracker-table">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold tracking-wider border-b border-slate-200">
+                                <th class="p-3 w-14 text-center">Tgl</th>
+                                <th class="p-3">Hari, Tanggal & Agenda Belajar</th>
+                                <th class="p-3 w-44 text-center">Durasi Belajar (Jam)</th>
+                                <th class="p-3 w-32 text-center">Status Selesai</th>
+                                <th class="p-3 w-56">Skor Latihan (1–100)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-sm">
+                            <!-- Rows generated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 2: TARGET SCORE UTBK & TRACKER TRYOUT (TAB TERPISAH)            -->
+        <!-- =================================================================== -->
+        <div id="tab-tryout" class="space-y-4 sm:space-y-6 hidden">
+
+            <!-- KARTU UTAMA: TARGET SKOR UTBK, PENCARIAN PTN & JURUSAN WAJIB, & DIAGRAM LINGKARAN TO TERAKHIR -->
+            <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 sm:p-6 shadow-md border border-slate-800">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+
+                    <!-- Kolom Kiri (7 Kolom): Pengaturan Target Skor & Database Pencarian PTN/Politeknik + Jurusan (WAJIB) -->
+                    <div class="lg:col-span-7 space-y-4">
+                        <div>
+                            <div class="flex items-center flex-wrap gap-2">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-500/20 border border-amber-400/30 px-2.5 py-0.5 rounded-full">
+                                    🎯 Target UTBK & Kampus Impian (Wajib)
+                                </span>
+                                <button type="button" id="btn-edit-target-dream" onclick="showTargetDreamForm()" class="hidden text-[11px] font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-600 px-2.5 py-0.5 rounded-full transition">
+                                    ✏️ Ubah Target
+                                </button>
+                            </div>
+                            <h2 class="text-lg sm:text-2xl font-extrabold mt-2" id="target-dream-title">Target Skor UTBK: 650</h2>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1" id="target-dream-ptn-display">
+                                Pilih PTN / Politeknik Negeri dan Jurusan Impianmu di bawah ini.
+                            </p>
+                        </div>
+
+                        <!-- Form Pencarian Pintar PTN / Politeknik & Jurusan (Otomatis hilang setelah disimpan) -->
+                        <div id="target-form-container" class="bg-slate-800/90 p-3.5 sm:p-4 rounded-xl border border-slate-700 space-y-3.5">
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                                <!-- Target Skor -->
+                                <div class="sm:col-span-3">
+                                    <label class="block text-xs text-amber-300 font-bold mb-1">
+                                        Target Skor (1-1000) <span class="text-red-400">*</span>
+                                    </label>
+                                    <input type="number" id="input-target-score" min="1" max="1000" step="1" value="650" required
+                                        placeholder="700"
+                                        oninput="enforceTryoutScoreRange(this); autoSaveTargetDraft();"
+                                        class="w-full px-3 py-2 text-sm font-extrabold text-slate-900 bg-white rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                                </div>
+
+                                <!-- Pencarian PTN / Politeknik Negeri -->
+                                <div class="sm:col-span-5 relative">
+                                    <label class="block text-xs text-amber-300 font-bold mb-1">
+                                        Cari PTN / Politeknik Negeri <span class="text-red-400">*</span>
+                                    </label>
+                                    <input type="text" id="input-search-ptn" autocomplete="off"
+                                        placeholder="Ketik misal: ITS, UGM, PENS, POLBAN..."
+                                        oninput="handlePtnSearchInput(this.value)"
+                                        onfocus="handlePtnSearchInput(this.value)"
+                                        class="w-full px-3 py-2 text-sm font-semibold text-slate-900 bg-white rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                                    <!-- Dropdown Hasil Pencarian PTN -->
+                                    <div id="ptn-dropdown-list" class="hidden absolute left-0 right-0 mt-1 max-h-56 overflow-y-auto custom-scroll bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200 z-50 divide-y divide-slate-100 text-xs">
+                                    </div>
+                                </div>
+
+                                <!-- Pilih / Cari Jurusan sesuai PTN yang dipilih -->
+                                <div class="sm:col-span-4 relative">
+                                    <label class="block text-xs text-amber-300 font-bold mb-1">
+                                        Pilih Jurusan / Prodi <span class="text-red-400">*</span>
+                                    </label>
+                                    <input type="text" id="input-search-major" autocomplete="off"
+                                        placeholder="Pilih / cari jurusan..."
+                                        oninput="handleMajorSearchInput(this.value)"
+                                        onfocus="handleMajorSearchInput(this.value)"
+                                        class="w-full px-3 py-2 text-sm font-semibold text-slate-900 bg-white rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                                    <!-- Dropdown Daftar Jurusan di PTN Tersebut -->
+                                    <div id="major-dropdown-list" class="hidden absolute left-0 right-0 mt-1 max-h-56 overflow-y-auto custom-scroll bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200 z-50 divide-y divide-slate-100 text-xs">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end pt-1">
+                                <button type="button" onclick="saveTargetScoreSettings()" class="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-extrabold text-xs sm:text-sm rounded-lg transition shadow-sm shrink-0">
+                                    💾 Simpan Target Impian
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kolom Kanan (5 Kolom): DIAGRAM LINGKARAN PROGRES SKOR TO TERAKHIR -->
+                    <div class="lg:col-span-5 bg-slate-950/60 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col items-center text-center">
+                        <div class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                            📊 Progres Skor Tryout Terakhir vs Target
+                        </div>
+
+                        <!-- SVG Diagram Lingkaran Dinamis (Naik/Turun sesuai TO Terakhir) -->
+                        <div class="relative w-36 h-36 sm:w-40 sm:h-40 my-1 flex items-center justify-center">
+                            <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="50" stroke="#1e293b" stroke-width="10" fill="transparent"></circle>
+                                <circle id="target-circle-progress" cx="60" cy="60" r="50" stroke="#38bdf8" stroke-width="10" stroke-linecap="round" fill="transparent"
+                                    stroke-dasharray="314.16"
+                                    stroke-dashoffset="314.16"
+                                    class="transition-all duration-700 ease-out"></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center px-2">
+                                <span id="target-circle-percent" class="text-2xl sm:text-3xl font-extrabold text-white">0%</span>
+                                <span id="target-circle-fraction" class="text-xs font-bold text-slate-300 mt-0.5">0 / 650</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Selisih & Tren Naik/Turun dari TO Sebelumnya -->
+                        <div id="target-circle-status" class="mt-2 text-xs font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                            Belum ada data Tryout
+                        </div>
+                        <div id="target-circle-trend" class="text-[11px] text-slate-400 mt-1.5">
+                            Masukkan skor TO terbaru untuk melihat progres naik/turun.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SEKSI INPUT & TABEL RIWAYAT SKOR TRYOUT -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-5">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-100 pb-4">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-900">Rekapitulasi & Input Skor Tryout</h3>
+                        <p class="text-xs text-slate-500">Setiap hasil Tryout yang disimpan bersifat permanen (tidak dapat dihapus) sebagai rekam jejak jujur progres belajarmu.</p>
+                    </div>
+                    <!-- Ringkasan Statistik Tryout -->
+                    <div class="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 sm:px-4 sm:py-2 rounded-xl border border-slate-200 shrink-0 w-full md:w-auto text-center">
+                        <div>
+                            <div id="to-stat-count" class="text-base sm:text-lg font-extrabold text-slate-800">0</div>
+                            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Total TO</div>
+                        </div>
+                        <div class="border-x border-slate-200 px-3">
+                            <div id="to-stat-latest" class="text-base sm:text-lg font-extrabold text-blue-600">0</div>
+                            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">TO Terakhir</div>
+                        </div>
+                        <div>
+                            <div id="to-stat-best" class="text-base sm:text-lg font-extrabold text-emerald-600">0</div>
+                            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Tertinggi</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANDUAN INDIKATOR WARNA SKOR TRYOUT -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3 text-xs">
+                    <div class="p-3 rounded-xl bg-red-50/80 border border-red-200 flex items-start space-x-2.5">
+                        <span class="w-3 h-3 rounded-full bg-red-600 shrink-0 mt-0.5"></span>
+                        <div>
+                            <div class="font-bold text-red-800" id="legend-merah-title">MERAH (Skor &lt; 550)</div>
+                            <p class="text-red-700/90 mt-0.5"><strong>Butuh Penguatan:</strong> Perlu penguatan konsep dasar pada materi yang masih lemah.</p>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-amber-50/80 border border-amber-200 flex items-start space-x-2.5">
+                        <span class="w-3 h-3 rounded-full bg-amber-500 shrink-0 mt-0.5"></span>
+                        <div>
+                            <div class="font-bold text-amber-800" id="legend-kuning-title">KUNING (Skor 550 – 649)</div>
+                            <p class="text-amber-700/90 mt-0.5"><strong>Standard — Butuh Improve:</strong> Tingkatkan ketelitian dan latihan variasi soal HOTS.</p>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-start space-x-2.5">
+                        <span class="w-3 h-3 rounded-full bg-emerald-600 shrink-0 mt-0.5"></span>
+                        <div>
+                            <div class="font-bold text-emerald-800" id="legend-hijau-title">HIJAU (Skor &ge; 650)</div>
+                            <p class="text-emerald-700/90 mt-0.5"><strong>Stabil:</strong> Perbanyak Tryout untuk memperkuat pemahaman dan konsistensi.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORM INPUT SKOR TRYOUT BARU -->
+                <div class="bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-200 space-y-3.5">
+                    <h4 class="text-sm font-bold text-slate-800">➕ Masukkan Hasil Tryout Baru</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <!-- Tanggal Tryout -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Tryout</label>
+                            <input type="date" id="to-input-date" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                        </div>
+
+                        <!-- Sumber Tryout -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Sumber / Platform Tryout</label>
+                            <select id="to-input-source" onchange="toggleCustomSource(this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                                <option value="Ruangguru">Ruangguru</option>
+                                <option value="Zenius">Zenius</option>
+                                <option value="Pahamify">Pahamify</option>
+                                <option value="SainsIn">SainsIn</option>
+                                <option value="Cerebrum">Cerebrum</option>
+                                <option value="Analitica">Analitica</option>
+                                <option value="Simulasi SNPMB">Simulasi SNPMB</option>
+                                <option value="Sekolah / Bimbel">Sekolah / Bimbel</option>
+                                <option value="Lainnya">Lainnya (Ketik Sendiri)...</option>
+                            </select>
+                            <input type="text" id="to-input-source-custom" placeholder="Ketik nama sumber TO..." class="hidden mt-2 w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                        </div>
+
+                        <!-- Skor Tryout (Paten Range 1-1000) -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Hasil / Skor Tryout (1-1000)</label>
+                            <input type="number" id="to-input-score" min="1" max="1000" step="1"
+                                placeholder="1 - 1000 (Contoh: 625)"
+                                oninput="enforceTryoutScoreRange(this)"
+                                class="w-full px-3 py-2 text-sm font-bold bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                        </div>
+
+                        <!-- Catatan Bagian / 7 Subtes Resmi UTBK-SNBT -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Bagian Subtes Terendah (7 Subtes)</label>
+                            <select id="to-input-weak-subtest" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                                <option value="Penalaran Umum (PU)">1. Penalaran Umum (PU)</option>
+                                <option value="Pengetahuan & Pemahaman Umum (PPU)">2. Pengetahuan & Pemahaman Umum (PPU)</option>
+                                <option value="Pemahaman Bacaan & Menulis (PBM)">3. Pemahaman Bacaan & Menulis (PBM)</option>
+                                <option value="Pengetahuan Kuantitatif (PK)">4. Pengetahuan Kuantitatif (PK)</option>
+                                <option value="Literasi dalam Bahasa Indonesia (LBI)">5. Literasi dalam Bahasa Indonesia (LBI)</option>
+                                <option value="Literasi dalam Bahasa Inggris (LBE)">6. Literasi dalam Bahasa Inggris (LBE)</option>
+                                <option value="Penalaran Matematika (PM)">7. Penalaran Matematika (PM)</option>
+                            </select>
+                        </div>
+
+                        <!-- Tombol Simpan -->
+                        <div class="flex items-end">
+                            <button onclick="addTryoutRecord()" class="w-full py-2.5 sm:py-2 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-sm transition">
+                                Simpan Hasil TO
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIWAYAT TRYOUT TAMPILAN MOBILE (HP): KARTU RINGKAS TANPA TOMBOL HAPUS (< 768px) -->
+                <div id="tryout-mobile-cards" class="block md:hidden space-y-3">
+                    <!-- Di-generate via JS -->
+                </div>
+
+                <!-- RIWAYAT TRYOUT TAMPILAN DESKTOP: TABEL RINGKAS TANPA TOMBOL HAPUS (>= 768px) -->
+                <div class="hidden md:block overflow-x-auto border border-slate-200 rounded-lg">
+                    <table class="w-full text-left border-collapse" id="tryout-table">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold tracking-wider border-b border-slate-200">
+                                <th class="p-3 w-12 text-center">No</th>
+                                <th class="p-3 w-36">Tanggal Tryout</th>
+                                <th class="p-3 w-40">Sumber Tryout</th>
+                                <th class="p-3 w-44 text-center">Skor Tryout</th>
+                                <th class="p-3">Status Peringatan & Keterangan (Berdasarkan Nilai TO)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tryout-table-body" class="divide-y divide-slate-200 text-sm">
+                            <!-- Di-generate via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 3: RINCIAN JADWAL & FITUR "SESUAIKAN JADWALMU SENDIRI"          -->
+        <!-- =================================================================== -->
+        <div id="tab-schedule" class="space-y-4 sm:space-y-6 hidden">
+            
+            <!-- Micro-Goals Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                <h2 class="text-base sm:text-lg font-bold text-slate-900 mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-800 p-1.5 rounded-md mr-2 text-sm font-semibold">🎯</span> 
+                    Target Mingguan (Micro-Goals Tiap Bulan)
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                    <div class="p-3.5 sm:p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Minggu 1</span>
+                        <p class="text-slate-700 text-sm font-medium mt-1">Penyelesaian modul dasar Tes Potensi Skolastik (PU, PPU, PBM) serta Tryout Baseline awal.</p>
+                    </div>
+                    <div class="p-3.5 sm:p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Minggu 2</span>
+                        <p class="text-slate-700 text-sm font-medium mt-1">Penguasaan Literasi Bahasa Indonesia & Bahasa Inggris serta latihan soal cepat.</p>
+                    </div>
+                    <div class="p-3.5 sm:p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Minggu 3</span>
+                        <p class="text-slate-700 text-sm font-medium mt-1">Pendalaman Penalaran Matematika (Aljabar, Aritmetika, Geometri) dan Kuis Adaptif.</p>
+                    </div>
+                    <div class="p-3.5 sm:p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Minggu 4 & Akhir Bulan</span>
+                        <p class="text-slate-700 text-sm font-medium mt-1">Simulasi intensif Tryout berkala dan analisis evaluasi kelemahan soal.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Schedule Section (Dinamis mengikuti jadwal aktif) -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                <h2 class="text-base sm:text-lg font-bold text-slate-900 mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-800 p-1.5 rounded-md mr-2 text-sm font-semibold">📅</span> 
+                    Rincian Jadwal Harian & Rekomendasi Durasi Belajar
+                </h2>
+                
+                <div id="schedule-display-list" class="space-y-3.5">
+                    <!-- Di-render otomatis dari data jadwal aktif (Default / Kustom) -->
+                </div>
+            </div>
+
+            <!-- FITUR KUSTOMISASI JADWAL: RINGKAS SECARA DEFAULT (HANYA TAMPIL JIKA USER INGIN MENAMBAHKAN/MENGUBAH SENDIRI) -->
+            <div class="bg-white rounded-xl shadow-sm border border-indigo-200 p-3.5 sm:p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 class="text-sm sm:text-base font-bold text-slate-900">Sesuaikan Jadwalmu Sendiri</h2>
+                        <p class="text-xs text-slate-500">Klik tombol di samping jika ingin mengubah fokus materi atau target jam harian.</p>
+                    </div>
+                    <button type="button" id="btn-toggle-custom-schedule" onclick="toggleCustomScheduleEditor()" class="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition shrink-0">
+                        ➕ Sesuaikan Jadwal
+                    </button>
+                </div>
+
+                <!-- Panel Form Editor (Tersembunyi secara default agar halaman tetap ringkas) -->
+                <div id="custom-schedule-panel" class="hidden mt-4 pt-4 border-t border-slate-100 space-y-4">
+                    <div id="custom-schedule-editor" class="space-y-3">
+                        <!-- Form editor Senin-Minggu di-generate via JS -->
+                    </div>
+                    <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                        <button type="button" onclick="resetCustomScheduleToDefault()" class="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+                            🔄 Reset ke Default
+                        </button>
+                        <button type="button" onclick="toggleCustomScheduleEditor(false)" class="px-3 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition">
+                            Tutup
+                        </button>
+                        <button type="button" onclick="saveCustomSchedule()" class="px-4 py-2 text-xs sm:text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">
+                            💾 Simpan Jadwalmu
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- ======================================================================= -->
+    <!-- POP-UP MODAL: DONASI SEIKHLASNYA (QRIS) & KOTAK DISKUSI SARAN WA        -->
+    <!-- ======================================================================= -->
+    <div
+        id="qris-donate-modal"
+        onclick="handleQrisModalBackdropClick(event)"
+        class="hidden fixed inset-0 z-[70] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+    >
+        <div
+            id="qris-donate-card"
+            class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden my-auto max-h-[92vh] flex flex-col"
+            onclick="event.stopPropagation()"
+        >
+            <!-- Header Pop-Up: Donasi Seikhlasnya & Logo QRIS -->
+            <div class="bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white px-4 py-3.5 flex items-center justify-between gap-2 shrink-0 border-b border-slate-800">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md border border-rose-300/40 shrink-0">
+                        <svg class="heart-beat-svg w-5 h-5 fill-current text-white" viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm sm:text-base font-extrabold tracking-tight truncate">Donasi Seikhlasnya</h3>
+                            <!-- Badge Logo QRIS Resmi -->
+                            <span class="inline-flex items-center bg-white text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md tracking-wider shadow-sm shrink-0 border border-rose-200">
+                                QRIS
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-rose-200/90 truncate">Dukungan Apresiasi &amp; Ruang Diskusi UTBK Tracker</p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onclick="closeQrisDonateModal()"
+                    aria-label="Tutup Pop-up"
+                    class="w-8 h-8 rounded-lg bg-slate-800/80 hover:bg-rose-600 text-slate-300 hover:text-white hover:rotate-90 active:scale-90 flex items-center justify-center transition-all duration-300 shrink-0 text-sm font-bold"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <!-- Isi Pop-Up (Scrollable) -->
+            <div class="p-4 sm:p-5 overflow-y-auto custom-scroll space-y-4">
+                <!-- Deskripsi Apresiasi Donasi Seikhlasnya -->
+                <div class="qris-stagger-item qris-stagger-1 bg-rose-50/80 border border-rose-200/80 rounded-xl p-3 text-xs text-slate-700 leading-relaxed">
+                    Halo Pejuang PTN! 👋 Aplikasi <strong>UTBK Progres Tracker</strong> ini dibuat agar <strong>100% gratis &amp; bebas iklan</strong> untuk menemani disiplin belajarmu setiap hari. Jika aplikasi ini bermanfaat, kamu bisa berbagi dukungan <strong>donasi seikhlasnya</strong> melalui scan kode <strong>QRIS</strong> di bawah ini. Terima kasih banyak &amp; semoga lolos PTN impianmu! ❤️✨
+                </div>
+
+                <!-- Kartu Kode QRIS dengan Header Logo QRIS -->
+                <div class="qris-stagger-item qris-stagger-2 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-center space-y-2.5 shadow-inner">
+                    <!-- Baris Logo QRIS & GPN -->
+                    <div class="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200/80">
+                        <div class="flex items-center gap-2">
+                            <!-- Logo QRIS Vector -->
+                            <div class="bg-slate-900 text-white font-black text-xs px-2 py-1 rounded tracking-widest leading-none">
+                                QRIS
+                            </div>
+                            <div class="text-left">
+                                <div class="text-[10px] font-extrabold text-slate-800 leading-tight">QR Code Standar</div>
+                                <div class="text-[9px] text-slate-500 font-semibold leading-tight">Pembayaran Nasional</div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-extrabold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                            Semua E-Wallet &amp; Bank
+                        </span>
+                    </div>
+
+                    <!-- Gambar Kode QRIS Asli (qris.jpeg) -->
+                    <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm inline-block w-full transition-transform duration-300 hover:scale-[1.015]">
+                        <img
+                            src="qris.jpeg"
+                            alt="Kode QRIS Donasi Seikhlasnya - MDC STORE, DIGITAL & KREATIF"
+                            class="w-full max-w-[270px] mx-auto rounded-lg object-contain"
+                        >
+                    </div>
+
+                    <div class="text-[11px] text-slate-500 font-medium">
+                        Merchant: <strong class="text-slate-800">MDC STORE, DIGITAL &amp; KREATIF</strong>
+                    </div>
+
+                    <!-- Tombol Simpan Gambar QRIS (Memudahkan Scan dari Galeri HP) -->
+                    <div class="pt-1">
+                        <a
+                            href="qris.jpeg"
+                            download="QRIS-Donasi-UTBK-Tracker.jpeg"
+                            class="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-xl text-xs font-bold bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 active:scale-[0.98] text-slate-700 border border-slate-300 shadow-sm transition-all duration-200"
+                        >
+                            <span>📥</span>
+                            <span>Simpan Gambar QRIS ke Galeri HP</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Bagian Bawah Pop-Up: Textbox Saran & Diskusi ke WhatsApp -->
+                <div class="qris-stagger-item qris-stagger-3 pt-3 border-t border-slate-200 space-y-2.5">
+                    <div>
+                        <h4 class="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                            <span>💬</span>
+                            <span>Ada masukan atau saran? Boleh kak di diskusikan</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                            Punya ide fitur tambahan, saran pengembangan, atau ingin ngobrol seputar aplikasi ini? Tulis di bawah ini lalu klik <strong>Kirim</strong> untuk langsung berdiskusi di WhatsApp kami.
+                        </p>
+                    </div>
+
+                    <textarea
+                        id="popup-feedback-input"
+                        rows="3"
+                        placeholder="Ada masukan atau saran? Boleh kak di diskusikan..."
+                        class="w-full px-3 py-2 text-xs sm:text-sm text-slate-800 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all duration-200 resize-y"
+                    ></textarea>
+
+                    <button
+                        type="button"
+                        onclick="sendFeedbackToWhatsApp('popup-feedback-input')"
+                        class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                        <span>Kirim</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR KHUSUS HP (3 TAB TERPISAH) -->
+    <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 text-white z-50 px-2 py-1.5 shadow-lg">
+        <div class="grid grid-cols-3 gap-1 max-w-md mx-auto">
+            <button onclick="switchTab('tracker')" id="mnav-tracker" class="flex flex-col items-center justify-center py-1.5 rounded-xl bg-blue-600 text-white transition">
+                <span class="text-sm">📋</span>
+                <span class="text-[10px] font-bold mt-0.5">Progres</span>
+            </button>
+            <button onclick="switchTab('tryout')" id="mnav-tryout" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-300 hover:bg-slate-800 transition">
+                <span class="text-sm">🎯</span>
+                <span class="text-[10px] font-bold mt-0.5">Target & TO</span>
+            </button>
+            <button onclick="switchTab('schedule')" id="mnav-schedule" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-300 hover:bg-slate-800 transition">
+                <span class="text-sm">📅</span>
+                <span class="text-[10px] font-bold mt-0.5">Jadwal</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // =========================================================================
+        // 1. SISTEM EVERGREEN MULTI-GENERASI (OTOMATIS GANTI TAHUN SETELAH UTBK SELESAI)
+        // =========================================================================
+        let nowRealtime = new Date();
+        let currentRealYear = nowRealtime.getFullYear();
+        let currentRealMonthIdx = nowRealtime.getMonth(); // 0=Jan .. 11=Des
+        let currentRealDate = nowRealtime.getDate();
+
+        // Pelaksanaan UTBK-SNBT berakhir pada 30 April pukul 23:59:59 setiap tahunnya.
+        // Begitu pelaksanaan UTBK tahun berjalan selesai (melewati 30 April 23:59:59),
+        // sistem otomatis berganti ke UTBK tahun berikutnya (2027 -> 2028 -> 2029 -> dst selamanya).
+        function computeTargetUtbkYear(refDate) {
+            const yr = refDate.getFullYear();
+            const utbkEndTimestamp = new Date(yr, 3, 30, 23, 59, 59, 999).getTime(); // 30 April 23:59:59
+            return refDate.getTime() > utbkEndTimestamp ? yr + 1 : yr;
+        }
+
+        let targetUtbkYear = computeTargetUtbkYear(nowRealtime);
+        let prepStartYear = targetUtbkYear - 1;
+
+        function getDaysInCalendarMonth(year, monthIdx) {
+            return new Date(year, monthIdx + 1, 0).getDate();
+        }
+
+        // Daftar lengkap 12 bulan siklus persiapan UTBK (Mei [prepStartYear] s/d April [targetUtbkYear])
+        // Akan difilter otomatis mulai dari bulan pertama kali user mulai belajar hingga bulan pelaksanaan UTBK (April).
+        const monthStyles = [
+            { monthIdx: 4,  name: 'Mei',       short: 'Mei', stroke: '#0284c7', bg: 'bg-sky-50',     border: 'border-sky-500',     text: 'text-sky-700' },
+            { monthIdx: 5,  name: 'Juni',      short: 'Jun', stroke: '#0891b2', bg: 'bg-cyan-50',    border: 'border-cyan-500',    text: 'text-cyan-700' },
+            { monthIdx: 6,  name: 'Juli',      short: 'Jul', stroke: '#2563eb', bg: 'bg-blue-50',    border: 'border-blue-500',    text: 'text-blue-700' },
+            { monthIdx: 7,  name: 'Agustus',   short: 'Agu', stroke: '#4f46e5', bg: 'bg-indigo-50',  border: 'border-indigo-500',  text: 'text-indigo-700' },
+            { monthIdx: 8,  name: 'September', short: 'Sep', stroke: '#2563eb', bg: 'bg-blue-50',    border: 'border-blue-500',    text: 'text-blue-700' },
+            { monthIdx: 9,  name: 'Oktober',   short: 'Okt', stroke: '#4f46e5', bg: 'bg-indigo-50',  border: 'border-indigo-500',  text: 'text-indigo-700' },
+            { monthIdx: 10, name: 'November',  short: 'Nov', stroke: '#9333ea', bg: 'bg-purple-50',  border: 'border-purple-500',  text: 'text-purple-700' },
+            { monthIdx: 11, name: 'Desember',  short: 'Des', stroke: '#e11d48', bg: 'bg-rose-50',    border: 'border-rose-500',    text: 'text-rose-700' },
+            { monthIdx: 0,  name: 'Januari',   short: 'Jan', stroke: '#d97706', bg: 'bg-amber-50',   border: 'border-amber-500',   text: 'text-amber-700' },
+            { monthIdx: 1,  name: 'Februari',  short: 'Feb', stroke: '#0d9488', bg: 'bg-teal-50',    border: 'border-teal-500',    text: 'text-teal-700' },
+            { monthIdx: 2,  name: 'Maret',     short: 'Mar', stroke: '#059669', bg: 'bg-emerald-50', border: 'border-emerald-500', text: 'text-emerald-700' },
+            { monthIdx: 3,  name: 'April',     short: 'Apr', stroke: '#dc2626', bg: 'bg-red-50',     border: 'border-red-500',     text: 'text-red-700', isExam: true }
+        ];
+
+        // Deteksi & kunci bulan awal mula user belajar pada generasi UTBK ini
+        // Misal user mulai belajar di Juni 2027 (untuk UTBK 2028) -> otomatis mulai dari Juni 2027 s/d April 2028.
+        // Jika user mulai di September 2026 (untuk UTBK 2027) -> otomatis mulai dari September 2026 s/d April 2027.
+        function getOrInitUserStartMonth(utbkYear) {
+            const storageKey = `utbk_start_month_${utbkYear}`;
+            const allCycleMonths = monthStyles.map(ms => {
+                const yr = ms.monthIdx >= 4 ? (utbkYear - 1) : utbkYear;
+                const shortYr = String(yr).slice(-2);
+                return {
+                    id: `${ms.short.toLowerCase()}${shortYr}`,
+                    year: yr,
+                    monthIdx: ms.monthIdx
+                };
+            });
+
+            // Cek posisi bulan real-time saat ini di dalam siklus
+            let currentCycleIdx = allCycleMonths.findIndex(m => m.year === currentRealYear && m.monthIdx === currentRealMonthIdx);
+            if (currentCycleIdx === -1) currentCycleIdx = 0;
+
+            try {
+                const savedRaw = localStorage.getItem(storageKey);
+                if (savedRaw) {
+                    const parsed = JSON.parse(savedRaw);
+                    const savedIdx = allCycleMonths.findIndex(m => m.year === parsed.year && m.monthIdx === parsed.monthIdx);
+                    if (savedIdx !== -1) {
+                        // Jika karena suatu hal bulan real-time lebih awal dari yang tersimpan, gunakan yang lebih awal
+                        if (currentCycleIdx < savedIdx) {
+                            const updated = allCycleMonths[currentCycleIdx];
+                            localStorage.setItem(storageKey, JSON.stringify({ year: updated.year, monthIdx: updated.monthIdx }));
+                            return currentCycleIdx;
+                        }
+                        return savedIdx;
+                    }
+                }
+            } catch (e) {}
+
+            // Cek apakah ada riwayat progres di bulan sebelumnya pada siklus ini
+            for (let i = 0; i < currentCycleIdx; i++) {
+                const m = allCycleMonths[i];
+                for (let w = 1; w <= 5; w++) {
+                    for (let d = 0; d < 7; d++) {
+                        if (localStorage.getItem(`utbk_${m.id}_w${w}_check_${d}`) === 'true') {
+                            localStorage.setItem(storageKey, JSON.stringify({ year: m.year, monthIdx: m.monthIdx }));
+                            return i;
+                        }
+                    }
+                }
+            }
+
+            // Pertama kali user membuka/memulai belajar -> simpan bulan saat ini sebagai bulan awal belajar
+            const startMonth = allCycleMonths[currentCycleIdx];
+            localStorage.setItem(storageKey, JSON.stringify({ year: startMonth.year, monthIdx: startMonth.monthIdx }));
+            return currentCycleIdx;
+        }
+
+        function buildMonthsData() {
+            const startIdx = getOrInitUserStartMonth(targetUtbkYear);
+            const activeStyles = monthStyles.slice(startIdx);
+
+            return activeStyles.map(ms => {
+                const yr = ms.monthIdx >= 4 ? prepStartYear : targetUtbkYear;
+                const daysCount = getDaysInCalendarMonth(yr, ms.monthIdx);
+                const shortYr = String(yr).slice(-2);
+                return {
+                    id: `${ms.short.toLowerCase()}${shortYr}`,
+                    year: yr,
+                    monthIdx: ms.monthIdx,
+                    daysCount: daysCount,
+                    name: `${ms.name} ${yr}${ms.isExam ? ' (UTBK)' : ''}`,
+                    short: `${ms.short} ${yr}${ms.isExam ? ' 🎯' : ''}`,
+                    stroke: ms.stroke,
+                    bg: ms.bg,
+                    border: ms.border,
+                    text: ms.text
+                };
+            });
+        }
+
+        let monthsData = buildMonthsData();
+
+        // Deteksi otomatis bulan berjalan hari ini
+        function getRealtimeActiveMonthObj() {
+            const found = monthsData.find(m => m.year === currentRealYear && m.monthIdx === currentRealMonthIdx);
+            return found || monthsData[0];
+        }
+
+        // =========================================================================
+        // 2. DATABASE LENGKAP PTN AKADEMIK & POLITEKNIK NEGERI BESERTA JURUSANNYA
+        // =========================================================================
+        const commonSaintekSoshumMajors = [
+            "S1 Pendidikan Dokter / Kedokteran", "S1 Teknik Informatika / Ilmu Komputer", "S1 Sistem Informasi", "S1 Sains Data",
+            "S1 Teknik Sipil", "S1 Teknik Mesin", "S1 Teknik Elektro", "S1 Teknik Industri", "S1 Teknik Kimia", "S1 Arsitektur",
+            "S1 Perencanaan Wilayah dan Kota (PWK)", "S1 Teknik Lingkungan", "S1 Matematika", "S1 Statistika", "S1 Aktuaria",
+            "S1 Fisika", "S1 Kimia", "S1 Biologi", "S1 Farmasi", "S1 Kesehatan Masyarakat", "S1 Keperawatan", "S1 Gizi",
+            "S1 Ilmu Hukum", "S1 Manajemen", "S1 Akuntansi", "S1 Ekonomi Pembangunan", "S1 Ilmu Komunikasi", "S1 Psikologi",
+            "S1 Hubungan Internasional", "S1 Administrasi Publik / Negara", "S1 Administrasi Bisnis", "S1 Sosiologi"
+        ];
+
+        const commonPoltekMajors = [
+            "D4 Teknik Informatika / Rekayasa Perangkat Lunak", "D4 Sistem Informasi Kota Cerdas", "D4 Teknologi Rekayasa Komputer",
+            "D4 Teknik Elektronika", "D4 Teknik Telekomunikasi", "D4 Teknik Listrik / Elektro Industri", "D4 Teknik Otomasi Industri",
+            "D4 Teknik Mesin Produksi dan Perawatan", "D4 Teknologi Rekayasa Manufaktur", "D4 Teknologi Rekayasa Konstruksi Jalan dan Jembatan",
+            "D4 Manajemen Proyek Konstruksi", "D4 Teknik Perancangan Jalan dan Jembatan", "D4 Akuntansi Manajerial / Keuangan",
+            "D4 Administrasi Bisnis Terapan", "D4 Manajemen Pemasaran Internasional", "D4 Bahasa Inggris untuk Komunikasi Bisnis",
+            "D3 Teknik Mesin", "D3 Teknik Sipil", "D3 Teknik Listrik", "D3 Teknik Elektronika", "D3 Teknik Informatika",
+            "D3 Akuntansi", "D3 Administrasi Bisnis"
+        ];
+
+        const ptnDatabase = [
+            {
+                code: "ITS",
+                name: "Institut Teknologi Sepuluh Nopember (Surabaya)",
+                type: "PTN Akademik & Vokasi",
+                majors: [
+                    "S1 Teknik Informatika", "S1 Sistem Informasi", "S1 Sains Data", "S1 Rekayasa Perangkat Lunak", "S1 Rekayasa Kecerdasan Artifisial",
+                    "S1 Teknik Elektro", "S1 Teknik Komputer", "S1 Teknik Biomedik", "S1 Teknik Mesin", "S1 Teknik Industri",
+                    "S1 Teknik Material & Metalurgi", "S1 Teknik Sipil", "S1 Arsitektur", "S1 Teknik Lingkungan", "S1 Perencanaan Wilayah dan Kota",
+                    "S1 Teknik Geomatika", "S1 Teknik Geofisika", "S1 Teknik Kimia", "S1 Teknik Fisika", "S1 Teknik Pangan",
+                    "S1 Teknik Perkapalan", "S1 Teknik Sistem Perkapalan", "S1 Teknik Kelautan", "S1 Teknik Transportasi Laut", "S1 Teknik Lepas Pantai",
+                    "S1 Kedokteran", "S1 Matematika", "S1 Statistika", "S1 Sains Aktuaria", "S1 Fisika", "S1 Kimia", "S1 Biologi",
+                    "S1 Desain Produk Industri", "S1 Desain Interior", "S1 Desain Komunikasi Visual (DKV)", "S1 Manajemen Bisnis", "S1 Studi Pembangunan",
+                    "D4 Teknologi Rekayasa Konstruksi Bangunan Air", "D4 Teknologi Rekayasa Manufaktur", "D4 Teknologi Rekayasa Konversi Energi",
+                    "D4 Teknologi Rekayasa Otomasi", "D4 Teknologi Rekayasa Kimia Industri", "D4 Teknologi Rekayasa Instrumentasi", "D4 Statistika Bisnis"
+                ]
+            },
+            {
+                code: "UGM",
+                name: "Universitas Gadjah Mada (Yogyakarta)",
+                type: "PTN Akademik & Vokasi",
+                majors: [
+                    "S1 Kedokteran", "S1 Kedokteran Gigi", "S1 Farmasi", "S1 Ilmu Komputer", "S1 Teknologi Informasi", "S1 Teknik Elektro",
+                    "S1 Teknik Mesin", "S1 Teknik Industri", "S1 Teknik Sipil", "S1 Arsitektur", "S1 Perencanaan Wilayah dan Kota",
+                    "S1 Teknik Kimia", "S1 Teknik Fisika", "S1 Teknik Geodesi", "S1 Teknik Geologi", "S1 Statistika", "S1 Ilmu Aktuaria",
+                    "S1 Matematika", "S1 Psikologi", "S1 Hukum", "S1 Manajemen", "S1 Akuntansi", "S1 Ilmu Ekonomi",
+                    "S1 Ilmu Hubungan Internasional", "S1 Ilmu Komunikasi", "S1 Manajemen dan Kebijakan Publik", "S1 Sastra Inggris",
+                    "D4 Teknologi Rekayasa Perangkat Lunak", "D4 Teknologi Rekayasa Internet", "D4 Teknologi Rekayasa Elektro",
+                    "D4 Teknologi Rekayasa Mesin", "D4 Akuntansi Sektor Publik", "D4 Manajemen dan Penilaian Properti"
+                ]
+            },
+            {
+                code: "UI",
+                name: "Universitas Indonesia (Depok / Jakarta)",
+                type: "PTN Akademik & Vokasi",
+                majors: [
+                    "S1 Pendidikan Dokter", "S1 Pendidikan Dokter Gigi", "S1 Ilmu Komputer", "S1 Sistem Informasi", "S1 Farmasi",
+                    "S1 Teknik Industri", "S1 Teknik Mesin", "S1 Teknik Elektro", "S1 Teknik Komputer", "S1 Teknik Sipil", "S1 Arsitektur",
+                    "S1 Teknik Metalurgi & Material", "S1 Teknik Kimia", "S1 Teknik Bioproses", "S1 Teknik Perkapalan", "S1 Teknik Lingkungan",
+                    "S1 Matematika", "S1 Statistika", "S1 Ilmu Aktuaria", "S1 Ilmu Hukum", "S1 Manajemen", "S1 Akuntansi",
+                    "S1 Ilmu Ekonomi", "S1 Psikologi", "S1 Ilmu Komunikasi", "S1 Ilmu Hubungan Internasional", "S1 Ilmu Administrasi Fiskal",
+                    "S1 Ilmu Administrasi Negara", "S1 Ilmu Administrasi Niaga", "S1 Kriminologi", "S1 Sastra Inggris", "S1 Sastra Jepang",
+                    "D4 Manajemen Bisnis Pariwisata", "D4 Produksi Media", "D4 Bisnis Kreatif", "D4 Fisioterapi", "D4 Terapi Okupasi"
+                ]
+            },
+            {
+                code: "ITB",
+                name: "Institut Teknologi Bandung (Bandung)",
+                type: "PTN Akademik (Fakultas / Sekolah)",
+                majors: [
+                    "STEI-K — Sekolah Teknik Elektro dan Informatika (Komputasi)", "STEI-R — Sekolah Teknik Elektro dan Informatika (Rekayasa)",
+                    "FTI — Fakultas Teknologi Industri", "FTMD — Fakultas Teknik Mesin dan Dirgantara", "FTSL — Fakultas Teknik Sipil dan Lingkungan",
+                    "FTTM — Fakultas Teknik Pertambangan dan Perminyakan", "FITB — Fakultas Ilmu dan Teknologi Kebumian",
+                    "FMIPA-M — Fakultas MIPA (Matematika)", "FMIPA-IPA — Fakultas MIPA (Sains)", "SAPPK — Sekolah Arsitektur, Perencanaan dan Pengembangan Kebijakan",
+                    "SF — Sekolah Farmasi", "SITH-S — Sekolah Ilmu dan Teknologi Hayati (Sains)", "SITH-R — Sekolah Ilmu dan Teknologi Hayati (Rekayasa)",
+                    "FSRD — Fakultas Seni Rupa dan Desain", "SBM — Sekolah Bisnis dan Manajemen"
+                ]
+            },
+            {
+                code: "UNAIR",
+                name: "Universitas Airlangga (Surabaya)",
+                type: "PTN Akademik & Vokasi",
+                majors: [
+                    "S1 Kedokteran", "S1 Kedokteran Gigi", "S1 Farmasi", "S1 Kedokteran Hewan", "S1 Kesehatan Masyarakat", "S1 Gizi",
+                    "S1 Keperawatan", "S1 Kebidanan", "S1 Sistem Informasi", "S1 Teknologi Sains Data", "S1 Teknik Biomedis", "S1 Teknik Industri",
+                    "S1 Teknik Elektro", "S1 Rekayasa Nanoteknologi", "S1 Statistika", "S1 Matematika", "S1 Ilmu Hukum", "S1 Manajemen",
+                    "S1 Akuntansi", "S1 Ekonomi Pembangunan", "S1 Ekonomi Islam", "S1 Psikologi", "S1 Ilmu Hubungan Internasional",
+                    "S1 Ilmu Komunikasi", "S1 Administrasi Publik", "D4 Teknologi Radiologi Pencitraan", "D4 Teknologi Laboratorium Medis", "D4 Teknik Informatika"
+                ]
+            },
+            {
+                code: "IPB",
+                name: "IPB University / Institut Pertanian Bogor",
+                type: "PTN Akademik & Vokasi",
+                majors: [
+                    "S1 Ilmu Komputer", "S1 Statistika dan Sains Data", "S1 Aktuaria", "S1 Teknologi Pangan", "S1 Teknik Industri Pertanian",
+                    "S1 Teknik Sipil dan Lingkungan", "S1 Teknik Mesin dan Biosistem", "S1 Kedokteran", "S1 Kedokteran Hewan", "S1 Ilmu Gizi",
+                    "S1 Manajemen", "S1 Agribisnis", "S1 Ekonomi Pembangunan", "S1 Ekonomi Syariah", "S1 Bisnis", "S1 Komunikasi dan Pengembangan Masyarakat",
+                    "S1 Arsitektur Lanskap", "S1 Agronomi dan Hortikultura", "S1 Manajemen Hutan", "S1 Ilmu dan Teknologi Kelautan",
+                    "D4 Teknologi Rekayasa Perangkat Lunak", "D4 Teknologi Rekayasa Komputer", "D4 Manajemen Agribisnis", "D4 Akuntansi"
+                ]
+            },
+            {
+                code: "UNDIP",
+                name: "Universitas Diponegoro (Semarang)",
+                type: "PTN Akademik & Vokasi",
+                majors: [...commonSaintekSoshumMajors, "S1 Teknik Perkapalan", "S1 Teknik Geologi", "S1 Teknik Geodesi", "S1 Ilmu Kelautan", "D4 Teknologi Rekayasa Otomasi", "D4 Informasi dan Humas", "D4 Akuntansi Perpajakan"]
+            },
+            {
+                code: "UB",
+                name: "Universitas Brawijaya (Malang)",
+                type: "PTN Akademik & Vokasi",
+                majors: [...commonSaintekSoshumMajors, "S1 Teknik Pengairan", "S1 Teknologi Informasi", "S1 Pendidikan Dokter Gigi", "S1 Ilmu Administrasi Perpajakan", "S1 Kewirausahaan", "D4 Desain Grafis", "D4 Manajemen Perhotelan"]
+            },
+            {
+                code: "UNPAD",
+                name: "Universitas Padjadjaran (Bandung / Jatinangor)",
+                type: "PTN Akademik & Vokasi",
+                majors: [...commonSaintekSoshumMajors, "S1 Pendidikan Dokter Gigi", "S1 Teknik Geologi", "S1 Bisnis Digital", "S1 Jurnalistik", "S1 Hubungan Masyarakat", "S1 Televisi dan Film", "D4 Akuntansi Perpajakan", "D4 Bisnis Internasional"]
+            },
+            {
+                code: "UNS",
+                name: "Universitas Sebelas Maret (Surakarta)",
+                type: "PTN Akademik & Vokasi",
+                majors: [...commonSaintekSoshumMajors, "S1 Desain Komunikasi Visual", "S1 Pendidikan Teknik Informatika & Komputer", "D4 Keselamatan dan Kesehatan Kerja (K3)", "D4 Demografi dan Pencatatan Sipil"]
+            },
+            {
+                code: "UNY",
+                name: "Universitas Negeri Yogyakarta (Yogyakarta)",
+                type: "PTN Akademik & Vokasi",
+                majors: [...commonSaintekSoshumMajors, "S1 Teknologi Informasi", "S1 Pendidikan Matematika", "S1 Pendidikan Bahasa Inggris", "S1 Pendidikan Guru Sekolah Dasar (PGSD)"]
+            },
+            {
+                code: "UM",
+                name: "Universitas Negeri Malang (Malang)",
+                type: "PTN Akademik & Vokasi",
+                majors: [...commonSaintekSoshumMajors, "S1 Desain Komunikasi Visual", "S1 Pendidikan Matematika", "S1 PGSD", "S1 Bimbingan dan Konseling"]
+            },
+            {
+                code: "UNESA",
+                name: "Universitas Negeri Surabaya (Surabaya)",
+                type: "PTN Akademik & Vokasi",
+                majors: [...commonSaintekSoshumMajors, "S1 Sains Data", "S1 Bisnis Digital", "S1 Desain Komunikasi Visual", "S1 PGSD", "S1 Ilmu Keolahragaan"]
+            },
+            {
+                code: "UPI",
+                name: "Universitas Pendidikan Indonesia (Bandung)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Rekayasa Perangkat Lunak", "S1 Bisnis Digital", "S1 Desain Komunikasi Visual", "S1 PGSD"]
+            },
+            {
+                code: "UNJ",
+                name: "Universitas Negeri Jakarta (Jakarta)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Ilmu Komputer", "S1 Sistem dan Teknologi Informasi", "S1 Bisnis Digital", "S1 PGSD"]
+            },
+            {
+                code: "UNNES",
+                name: "Universitas Negeri Semarang (Semarang)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Teknik Informatika", "S1 Sistem Informasi", "S1 Kesehatan Masyarakat", "S1 PGSD"]
+            },
+            {
+                code: "UNEJ",
+                name: "Universitas Jember (Jember)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Pendidikan Dokter Gigi", "S1 Sistem Informasi", "S1 Teknologi Informasi", "S1 Teknik Pertambangan"]
+            },
+            {
+                code: "UNSOED",
+                name: "Universitas Jenderal Soedirman (Purwokerto)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Pendidikan Dokter Gigi", "S1 Informatika", "S1 Teknik Geologi"]
+            },
+            {
+                code: "UPNVJT",
+                name: "UPN Veteran Jawa Timur (Surabaya)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Sains Data", "S1 Bisnis Digital", "S1 Desain Komunikasi Visual", "S1 Teknologi Pangan"]
+            },
+            {
+                code: "UPNVY",
+                name: "UPN Veteran Yogyakarta (Yogyakarta)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Teknik Perminyakan", "S1 Teknik Pertambangan", "S1 Teknik Geologi", "S1 Teknik Geofisika", "S1 Teknik Geomatika"]
+            },
+            {
+                code: "UPNVJ",
+                name: "UPN Veteran Jakarta (Jakarta)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Kedokteran", "S1 Informatika", "S1 Sistem Informasi", "S1 Sains Informasi"]
+            },
+            {
+                code: "USU",
+                name: "Universitas Sumatera Utara (Medan)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Teknologi Informasi", "S1 Pendidikan Dokter Gigi", "S1 Kehutanan"]
+            },
+            {
+                code: "UNAND",
+                name: "Universitas Andalas (Padang)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Kedokteran Gigi", "S1 Teknik Komputer", "S1 Agribisnis"]
+            },
+            {
+                code: "UNSRI",
+                name: "Universitas Sriwijaya (Palembang)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Teknik Pertambangan", "S1 Sistem Komputer", "S1 Pendidikan Dokter Gigi"]
+            },
+            {
+                code: "ITERA",
+                name: "Institut Teknologi Sumatera (Lampung)",
+                type: "PTN Akademik",
+                majors: ["S1 Teknik Informatika", "S1 Sains Data", "S1 Teknik Elektro", "S1 Teknik Mesin", "S1 Teknik Industri", "S1 Teknik Sipil", "S1 Arsitektur", "S1 Perencanaan Wilayah dan Kota", "S1 Teknik Pertambangan", "S1 Teknik Geologi", "S1 Teknik Geofisika", "S1 Farmasi", "S1 Sains Aktuaria"]
+            },
+            {
+                code: "ITK",
+                name: "Institut Teknologi Kalimantan (Balikpapan)",
+                type: "PTN Akademik",
+                majors: ["S1 Informatika", "S1 Sistem Informasi", "S1 Bisnis Digital", "S1 Teknik Elektro", "S1 Teknik Mesin", "S1 Teknik Industri", "S1 Teknik Sipil", "S1 Teknik Kimia", "S1 Teknik Material dan Metalurgi", "S1 Teknik Perkapalan", "S1 Perencanaan Wilayah dan Kota", "S1 Ilmu Aktuaria", "S1 Statistika"]
+            },
+            {
+                code: "UNHAS",
+                name: "Universitas Hasanuddin (Makassar)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Teknik Pertambangan", "S1 Teknik Geologi", "S1 Teknik Perkapalan", "S1 Pendidikan Dokter Gigi"]
+            },
+            {
+                code: "UNUD",
+                name: "Universitas Udayana (Bali)",
+                type: "PTN Akademik",
+                majors: [...commonSaintekSoshumMajors, "S1 Teknologi Informasi", "S1 Pariwisata", "S1 Industri Perjalanan Wisata", "S1 Kedokteran Hewan"]
+            },
+            // ================= POLITEKNIK NEGERI (PTN VOKASI) =================
+            {
+                code: "PENS",
+                name: "Politeknik Elektronika Negeri Surabaya (Surabaya)",
+                type: "Politeknik Negeri",
+                majors: [
+                    "D4 Teknik Informatika", "D4 Sains Data Terapan", "D4 Teknik Komputer", "D4 Teknik Elektronika",
+                    "D4 Teknik Telekomunikasi", "D4 Teknik Elektro Industri", "D4 Teknik Mekatronika", "D4 Sistem Pembangkit Energi",
+                    "D4 Teknologi Game", "D4 Teknologi Rekayasa Internet", "D4 Teknologi Rekayasa Multimedia",
+                    "D3 Teknik Informatika", "D3 Teknik Elektronika", "D3 Teknik Telekomunikasi", "D3 Teknik Elektro Industri", "D3 Teknologi Multimedia Broadcasting"
+                ]
+            },
+            {
+                code: "PPNS",
+                name: "Politeknik Perkapalan Negeri Surabaya (Surabaya)",
+                type: "Politeknik Negeri",
+                majors: [
+                    "D4 Teknik Keselamatan dan Kesehatan Kerja (K3)", "D4 Teknik Desain dan Manufaktur", "D4 Teknik Pengelasan",
+                    "D4 Teknik Perpipaan", "D4 Teknik Otomasi", "D4 Teknik Pengolahan Limbah", "D4 Manajemen Bisnis Maritim",
+                    "D4 Teknik Permesinan Kapal", "D4 Teknik Kelistrikan Kapal", "D4 Teknologi Rekayasa Energi Berkelanjutan",
+                    "D3 Teknik Bangunan Kapal", "D3 Teknik Permesinan Kapal", "D3 Teknik Kelistrikan Kapal"
+                ]
+            },
+            {
+                code: "POLBAN",
+                name: "Politeknik Negeri Bandung (Bandung)",
+                type: "Politeknik Negeri",
+                majors: [
+                    "D4 Teknik Informatika", "D4 Teknik Otomasi Industri", "D4 Teknik Elektronika", "D4 Teknik Telekomunikasi",
+                    "D4 Teknik Perancangan dan Konstruksi Mesin", "D4 Proses Manufaktur", "D4 Teknik Pembangkit Tenaga Listrik",
+                    "D4 Teknik Konversi Energi", "D4 Teknik Perancangan Jalan dan Jembatan", "D4 Teknik Perawatan dan Perbaikan Gedung",
+                    "D4 Teknik Kimia Produksi Bersih", "D4 Teknik Refrigerasi dan Tata Udara", "D4 Akuntansi", "D4 Keuangan Syariah",
+                    "D4 Akuntansi Manajemen Pemerintahan", "D4 Administrasi Bisnis", "D4 Manajemen Pemasaran", "D4 Manajemen Aset",
+                    "D3 Teknik Informatika", "D3 Teknik Mesin", "D3 Teknik Sipil", "D3 Teknik Listrik", "D3 Teknik Aeronautika"
+                ]
+            },
+            {
+                code: "PNJ",
+                name: "Politeknik Negeri Jakarta (Depok)",
+                type: "Politeknik Negeri",
+                majors: [
+                    "D4 Teknik Informatika", "D4 Teknologi Rekayasa Perangkat Lunak", "D4 Teknik Multimedia Digital", "D4 Teknik Multimedia dan Jaringan",
+                    "D4 Instrumentasi dan Kontrol Industri", "D4 Teknik Otomasi Listrik Industri", "D4 Teknologi Rekayasa Manufaktur",
+                    "D4 Teknologi Rekayasa Pembangkit Energi", "D4 Konstruksi Gedung", "D4 Perancangan Jalan dan Jembatan",
+                    "D4 Akuntansi Keuangan", "D4 Keuangan dan Perbankan Syariah", "D4 Manajemen Keuangan", "D4 Administrasi Bisnis Terapan",
+                    "D4 Usaha Jasa Konvensi, Perjalanan Insentif dan Pameran (MICE)", "D4 Bahasa Inggris untuk Komunikasi Bisnis dan Profesional", "D4 Desain Grafis"
+                ]
+            },
+            {
+                code: "POLINEMA",
+                name: "Politeknik Negeri Malang (Malang)",
+                type: "Politeknik Negeri",
+                majors: [
+                    "D4 Teknik Informatika", "D4 Sistem Informasi Bisnis", "D4 jaringan Telekomunikasi Digital", "D4 Teknik Elektronika",
+                    "D4 Sistem Kelistrikan", "D4 Teknik Otomotif Elektronik", "D4 Teknik Mesin Produksi dan Perawatan",
+                    "D4 Manajemen Rekayasa Konstruksi", "D4 Teknologi Rekayasa Konstruksi Jalan dan Jembatan", "D4 Teknologi Kimia Industri",
+                    "D4 Akuntansi Manajemen", "D4 Keuangan", "D4 Manajemen Pemasaran", "D4 Bahasa Inggris untuk Komunikasi Bisnis dan Profesional",
+                    "D3 Teknik Mesin", "D3 Teknik Sipil", "D3 Teknik Listrik", "D3 Akuntansi", "D3 Administrasi Bisnis"
+                ]
+            },
+            {
+                code: "POLINES",
+                name: "Politeknik Negeri Semarang (Semarang)",
+                type: "Politeknik Negeri",
+                majors: [...commonPoltekMajors, "D4 Perbankan Syariah", "D4 Analis Keuangan", "D4 Komputerisasi Akuntansi", "D4 Teknik Telekomunikasi"]
+            },
+            {
+                code: "POLIJE",
+                name: "Politeknik Negeri Jember (Jember)",
+                type: "Politeknik Negeri",
+                majors: ["D4 Teknik Informatika", "D4 Manajemen Informasi Kesehatan", "D4 Gizi Klinik", "D4 Teknologi Rekayasa Perangkat Lunak", "D4 Manajemen Agribisnis", "D4 Teknologi Rekayasa Pangan", "D4 Teknik Energi Terbarukan", "D4 Mesin Otomotif", "D4 Akuntansi Sektor Publik"]
+            },
+            {
+                code: "POLSRI",
+                name: "Politeknik Negeri Sriwijaya (Palembang)",
+                type: "Politeknik Negeri",
+                majors: [...commonPoltekMajors, "D4 Manajemen Informatika", "D4 Teknik Kimia", "D4 Teknik Energi"]
+            },
+            {
+                code: "PNP",
+                name: "Politeknik Negeri Padang (Padang)",
+                type: "Politeknik Negeri",
+                majors: [...commonPoltekMajors, "D4 Teknologi Rekayasa Perangkat Lunak", "D4 Teknik Perencanaan Irigasi dan Rawa"]
+            },
+            {
+                code: "POLMED",
+                name: "Politeknik Negeri Medan (Medan)",
+                type: "Politeknik Negeri",
+                majors: [...commonPoltekMajors, "D4 Teknologi Rekayasa Perangkat Lunak", "D4 Manajemen Bisnis", "D4 Akuntansi Keuangan Publik"]
+            },
+            {
+                code: "POLIBATAM",
+                name: "Politeknik Negeri Batam (Batam)",
+                type: "Politeknik Negeri",
+                majors: ["D4 Teknik Rekayasa Perangkat Lunak", "D4 Animasi", "D4 Teknik Multimedia dan Jaringan", "D4 Rekayasa Keamanan Siber", "D4 Teknik Mekatronika", "D4 Teknik Robotika", "D4 Teknologi Rekayasa Pembangkit Energi", "D4 Akuntansi Manajerial", "D4 Administrasi Bisnis Terapan", "D4 Logistik Perdagangan Internasional"]
+            },
+            {
+                code: "PNB",
+                name: "Politeknik Negeri Bali (Badung, Bali)",
+                type: "Politeknik Negeri",
+                majors: [...commonPoltekMajors, "D4 Manajemen Bisnis Pariwisata", "D4 Bisnis Digital", "D4 Akuntansi Perpajakan"]
+            },
+            {
+                code: "PNUP",
+                name: "Politeknik Negeri Ujung Pandang (Makassar)",
+                type: "Politeknik Negeri",
+                majors: [...commonPoltekMajors, "D4 Teknik Komputer dan Jaringan", "D4 Teknologi Kimia Industri", "D4Teknik Pembangkit Energi"]
+            },
+            {
+                code: "POLMAN BANDUNG",
+                name: "Politeknik Manufaktur Bandung (Bandung)",
+                type: "Politeknik Negeri",
+                majors: ["D4 Teknologi Rekayasa Manufaktur", "D4 Teknologi Rekayasa Perancangan Manufaktur", "D4 Teknologi Rekayasa Pengecoran Logam", "D4 Teknologi Rekayasa Otomasi", "D4 Teknologi Rekayasa Mekatronika", "D4 Teknologi Rekayasa Informatika Industri", "D4 Manajemen Teknologi Rekayasa"]
+            },
+            {
+                code: "POLIMEDIA",
+                name: "Politeknik Negeri Media Kreatif (Jakarta)",
+                type: "Politeknik Negeri",
+                majors: ["D4 Desain Mode", "D4 Animasi", "D4 Teknologi Rekayasa Multimedia", "D4 Teknologi Permainan (Game)", "D4 Pengelolaan Perhotelan", "D4 Produksi Film dan Televisi", "D3 Desain Grafis", "D3 Penerbitan", "D3 Fotografi", "D3 Periklanan", "D3 Penyiaran"]
+            }
+        ];
+
+        // =========================================================================
+        // 3. JADWAL BELAJAR (MENDUKUNG FITUR "SESUAIKAN JADWALMU SENDIRI")
+        // =========================================================================
+        const defaultScheduleData = [
+            { day: "Senin",  color: "border-blue-500",    badge: "bg-blue-50 text-blue-700",    topic: "Penalaran Umum & PPU", task: "Penalaran Umum & PPU (Logika penalaran, silogisme & latihan 20 soal)", defaultHours: 2 },
+            { day: "Selasa", color: "border-teal-500",    badge: "bg-teal-50 text-teal-700",    topic: "Literasi Bahasa & PBM", task: "Literasi Bahasa & PBM (Bedah teks bacaan, ejaan & teknik skimming)", defaultHours: 2 },
+            { day: "Rabu",   color: "border-indigo-500",  badge: "bg-indigo-50 text-indigo-700",topic: "Penalaran Matematika (Aljabar)", task: "Penalaran Matematika Aljabar (Aritmetika, persamaan & soal cerita)", defaultHours: 2 },
+            { day: "Kamis",  color: "border-purple-500",  badge: "bg-purple-50 text-purple-700",topic: "Penalaran Matematika (Geometri & Statistik)", task: "Penalaran Matematika Geometri, Peluang & Analisis Data (Kuis Adaptif)", defaultHours: 2 },
+            { day: "Jumat",  color: "border-amber-500",   badge: "bg-amber-50 text-amber-700",  topic: "Pendalaman Materi & Evaluasi Kelemahan", task: "Pendalaman Materi & Weakness Drill pada bab yang sering salah", defaultHours: 1.5 },
+            { day: "Sabtu",  color: "border-red-500",     badge: "bg-red-50 text-red-700",      topic: "Simulasi Tryout & Evaluasi", task: "Tryout UTBK kondisi nyata & analisis kesalahan konsep", defaultHours: 3 },
+            { day: "Minggu", color: "border-emerald-500", badge: "bg-emerald-50 text-emerald-700", topic: "Istirahat & Review Ringan", task: "Menjaga kondisi mental & review catatan ringan (30 Menit)", defaultHours: 0.5 }
+        ];
+
+        const CUSTOM_SCHEDULE_KEY = 'utbk_custom_schedule_v1';
+        const TRYOUT_STORAGE_KEY = 'utbk_tryout_records_v1';
+        const TARGET_SCORE_KEY = 'utbk_target_score_v1';
+        const TARGET_PTN_KEY = 'utbk_target_ptn_v1';
+        const TARGET_MAJOR_KEY = 'utbk_target_major_v1';
+
+        function getActiveScheduleData() {
+            try {
+                const raw = localStorage.getItem(CUSTOM_SCHEDULE_KEY);
+                if (!raw) return JSON.parse(JSON.stringify(defaultScheduleData));
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length === 7) {
+                    return defaultScheduleData.map((def, i) => ({
+                        ...def,
+                        topic: parsed[i].topic || def.topic,
+                        task: parsed[i].task || def.task,
+                        defaultHours: !isNaN(parseFloat(parsed[i].defaultHours)) ? parseFloat(parsed[i].defaultHours) : def.defaultHours
+                    }));
+                }
+            } catch (e) {}
+            return JSON.parse(JSON.stringify(defaultScheduleData));
+        }
+
+        let baseScheduleData = getActiveScheduleData();
+        let activeTab = localStorage.getItem('utbk_active_tab') || 'tracker';
+
+        function jsDayToScheduleIdx(jsDay) {
+            return jsDay === 0 ? 6 : jsDay - 1;
+        }
+
+        function getDayInfoForMonthDate(monthObj, dayNum) {
+            const dateObj = new Date(monthObj.year, monthObj.monthIdx, dayNum);
+            const schedIdx = jsDayToScheduleIdx(dateObj.getDay());
+            const sched = baseScheduleData[schedIdx];
+            const weekNum = Math.ceil(dayNum / 7);
+            const dayIdxInWeek = (dayNum - 1) % 7;
+
+            const monthsShortIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const dateLabel = `${dayNum} ${monthsShortIndo[monthObj.monthIdx]} ${monthObj.year}`;
+
+            // Cek status waktu relatif terhadap HARI INI (Anti-Curang / Tidak Bisa Putar Waktu)
+            const todayMidnight = new Date(currentRealYear, currentRealMonthIdx, currentRealDate).getTime();
+            const itemMidnight = new Date(monthObj.year, monthObj.monthIdx, dayNum).getTime();
+
+            let timeStatus = 'today'; // 'past' | 'today' | 'future'
+            if (itemMidnight < todayMidnight) timeStatus = 'past';
+            else if (itemMidnight > todayMidnight) timeStatus = 'future';
+
+            return {
+                dayNum,
+                dateObj,
+                dateLabel,
+                schedIdx,
+                dayName: sched.day,
+                topic: sched.topic,
+                task: sched.task,
+                defaultHours: sched.defaultHours,
+                weekNum,
+                dayIdxInWeek,
+                timeStatus
+            };
+        }
+
+        function getCheckKey(monthId, weekNum, dayIdxInWeek) {
+            return `utbk_${monthId}_w${weekNum}_check_${dayIdxInWeek}`;
+        }
+        function getHoursKey(monthId, weekNum, dayIdxInWeek) {
+            return `utbk_${monthId}_w${weekNum}_hours_${dayIdxInWeek}`;
+        }
+        function getScoreLatihanKey(monthId, weekNum, dayIdxInWeek) {
+            return `utbk_${monthId}_w${weekNum}_note_${dayIdxInWeek}`;
+        }
+
+        function getSavedHours(monthObj, dayNum) {
+            const info = getDayInfoForMonthDate(monthObj, dayNum);
+            const raw = localStorage.getItem(getHoursKey(monthObj.id, info.weekNum, info.dayIdxInWeek));
+            if (raw === null || raw === '') {
+                return info.defaultHours;
+            }
+            const parsed = parseFloat(raw);
+            return isNaN(parsed) ? 0 : parsed;
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        // Update Banner & Countdown sesuai Tahun UTBK Generasi Saat Ini (Otomatis berganti tiap UTBK selesai: 2027 -> 2028 -> dst)
+        function initEvergreenEdition() {
+            nowRealtime = new Date();
+            currentRealYear = nowRealtime.getFullYear();
+            currentRealMonthIdx = nowRealtime.getMonth();
+            currentRealDate = nowRealtime.getDate();
+
+            const latestTargetYear = computeTargetUtbkYear(nowRealtime);
+            if (latestTargetYear !== targetUtbkYear) {
+                targetUtbkYear = latestTargetYear;
+                prepStartYear = targetUtbkYear - 1;
+                monthsData = buildMonthsData();
+            }
+
+            document.title = `UTBK ${targetUtbkYear} — Study Schedule & Progress Tracker`;
+            document.getElementById('header-utbk-year-badge').innerText = `UTBK ${targetUtbkYear}`;
+            document.getElementById('banner-edition-badge').innerText = `⏳ Estimasi Pelaksanaan UTBK-SNBT ${targetUtbkYear}`;
+            document.getElementById('banner-exam-date-title').innerText = `Perkiraan Ujian: 21 – 30 April ${targetUtbkYear}`;
+            document.getElementById('banner-exam-desc').innerHTML = `Pola resmi SNPMB: <strong>Pendaftaran</strong> akhir Maret – awal April ${targetUtbkYear}, <strong>Ujian Gelombang 1 & 2</strong> akhir April ${targetUtbkYear}, dan <strong>Pengumuman</strong> Mei ${targetUtbkYear}.`;
+            document.getElementById('monthly-circles-heading').innerText = `Rekam Jejak Progres Bulanan Menuju UTBK ${targetUtbkYear}`;
+
+            const targetDate = new Date(`${targetUtbkYear}-04-21T07:00:00+07:00`);
+            const diffTime = targetDate - nowRealtime;
+            const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+            document.getElementById('countdown-days').innerText = diffDays;
+        }
+
+        // Navigasi 3 Tab Terpisah
+        function switchTab(tabName) {
+            activeTab = tabName;
+            localStorage.setItem('utbk_active_tab', tabName);
+
+            const tabs = ['tracker', 'tryout', 'schedule'];
+            tabs.forEach(t => {
+                const sectionEl = document.getElementById('tab-' + t);
+                const btnDesktop = document.getElementById('btn-' + t);
+                const btnMobile = document.getElementById('mnav-' + t);
+
+                const isCurrent = (t === tabName);
+                if (sectionEl) {
+                    if (isCurrent) sectionEl.classList.remove('hidden');
+                    else sectionEl.classList.add('hidden');
+                }
+                if (btnDesktop) {
+                    btnDesktop.className = isCurrent
+                        ? "px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-blue-600 text-white shadow-sm"
+                        : "px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700";
+                }
+                if (btnMobile) {
+                    btnMobile.className = isCurrent
+                        ? "flex flex-col items-center justify-center py-1.5 rounded-xl bg-blue-600 text-white transition shadow-sm"
+                        : "flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-300 hover:bg-slate-800 transition";
+                }
+            });
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // =========================================================================
+        // 4. RENDER LINGKARAN BULANAN & CHECKLIST REAL-TIME (ANTI-PUTAR WAKTU)
+        // =========================================================================
+
+        function renderMonthlyCircles() {
+            const container = document.getElementById('monthly-circles-container');
+            const activeMonthObj = getRealtimeActiveMonthObj();
+            const radius = 24;
+            const circumference = 2 * Math.PI * radius;
+            let grandTotalHours = 0;
+
+            container.innerHTML = monthsData.map(m => {
+                let completedDays = 0;
+                let monthCompletedHours = 0;
+                const totalDaysInMonth = m.daysCount;
+
+                for (let d = 1; d <= totalDaysInMonth; d++) {
+                    const info = getDayInfoForMonthDate(m, d);
+                    const checked = localStorage.getItem(getCheckKey(m.id, info.weekNum, info.dayIdxInWeek)) === 'true';
+                    const hrs = getSavedHours(m, d);
+                    if (checked) {
+                        completedDays++;
+                        monthCompletedHours += hrs;
+                    }
+                }
+
+                grandTotalHours += monthCompletedHours;
+                const percent = Math.round((completedDays / totalDaysInMonth) * 100);
+                const offset = circumference - (percent / 100) * circumference;
+                const isCurrentMonth = (m.id === activeMonthObj.id);
+
+                // Cek apakah bulan ini sudah lewat sepenuhnya
+                const monthEndMidnight = new Date(m.year, m.monthIdx, m.daysCount, 23, 59, 59).getTime();
+                const isPastMonth = monthEndMidnight < nowRealtime.getTime();
+
+                let statusBadgeHtml = '';
+                if (isPastMonth) {
+                    statusBadgeHtml = `<span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 mt-1">🔒 Selesai</span>`;
+                } else if (isCurrentMonth) {
+                    statusBadgeHtml = `<span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-600 text-white mt-1">⚡ Bulan Ini</span>`;
+                } else {
+                    statusBadgeHtml = `<span class="text-[9px] font-medium text-slate-400 mt-1">⏳ Akan Datang</span>`;
+                }
+
+                return `
+                    <div class="p-2.5 sm:p-3 rounded-xl border text-center flex flex-col items-center justify-between select-none ${
+                        isCurrentMonth
+                            ? `${m.bg} ${m.border} ring-2 ring-offset-1 ring-blue-500/40 shadow-sm`
+                            : isPastMonth
+                                ? 'bg-slate-100/80 border-slate-200 opacity-85'
+                                : 'bg-slate-50/60 border-slate-200 opacity-75'
+                    }">
+                        <div class="text-[11px] sm:text-xs font-bold ${isCurrentMonth ? m.text : 'text-slate-700'} truncate w-full">${m.short}</div>
+                        <div class="relative w-14 h-14 sm:w-16 sm:h-16 my-1 flex items-center justify-center">
+                            <svg class="w-14 h-14 sm:w-16 sm:h-16 -rotate-90" viewBox="0 0 60 60">
+                                <circle cx="30" cy="30" r="${radius}" stroke="#e2e8f0" stroke-width="5.5" fill="transparent"></circle>
+                                <circle cx="30" cy="30" r="${radius}" stroke="${m.stroke}" stroke-width="5.5" stroke-linecap="round" fill="transparent"
+                                    stroke-dasharray="${circumference.toFixed(2)}"
+                                    stroke-dashoffset="${offset.toFixed(2)}"
+                                    class="transition-all duration-500"></circle>
+                            </svg>
+                            <span class="absolute text-[11px] sm:text-xs font-extrabold text-slate-800">${percent}%</span>
+                        </div>
+                        <div class="text-[10px] sm:text-[11px] text-slate-500 font-medium">${completedDays}/${totalDaysInMonth} hr • <span class="font-bold text-slate-700">${monthCompletedHours}j</span></div>
+                        ${statusBadgeHtml}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('total-all-hours').innerText = `${grandTotalHours}`;
+        }
+
+        // Render Checklist Harian Bulan Berjalan (Otomatis menampilkan Minggu berjalan dari Tanggal Hari Ini)
+        function renderTrackerTable() {
+            const tbody = document.querySelector('#tracker-table tbody');
+            const mobileContainer = document.getElementById('tracker-mobile-cards');
+            tbody.innerHTML = '';
+            mobileContainer.innerHTML = '';
+
+            const monthObj = getRealtimeActiveMonthObj();
+            const todayInfo = getDayInfoForMonthDate(monthObj, Math.min(currentRealDate, monthObj.daysCount));
+
+            // Tampilkan rentang minggu berjalan tempat tanggal hari ini berada
+            const activeWeekNum = todayInfo.weekNum;
+            const startDay = (activeWeekNum - 1) * 7 + 1;
+            const endDay = Math.min(monthObj.daysCount, activeWeekNum * 7);
+
+            document.getElementById('table-title').innerText = `Checklist & Jam Belajar — ${monthObj.name} (Tgl ${startDay}–${endDay})`;
+            document.getElementById('realtime-today-label').innerText = `${todayInfo.dayName}, ${todayInfo.dateLabel}`;
+
+            for (let dayNum = startDay; dayNum <= endDay; dayNum++) {
+                const info = getDayInfoForMonthDate(monthObj, dayNum);
+                const checkKey = getCheckKey(monthObj.id, info.weekNum, info.dayIdxInWeek);
+                const scoreKey = getScoreLatihanKey(monthObj.id, info.weekNum, info.dayIdxInWeek);
+
+                const isChecked = localStorage.getItem(checkKey) === 'true';
+                const savedHours = getSavedHours(monthObj, dayNum);
+                const savedScoreLatihan = localStorage.getItem(scoreKey) || '';
+
+                const isToday = (info.timeStatus === 'today');
+                const isPast = (info.timeStatus === 'past');
+                const isFuture = (info.timeStatus === 'future');
+                const isLocked = !isToday; // Hanya HARI INI yang bisa diubah!
+
+                let statusBadge = '';
+                if (isToday) {
+                    statusBadge = `<span class="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-600 text-white rounded-full">📌 Hari Ini (Aktif)</span>`;
+                } else if (isPast) {
+                    statusBadge = isChecked
+                        ? `<span class="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 rounded-full">🔒 Selesai</span>`
+                        : `<span class="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase bg-rose-100 text-rose-700 rounded-full">🔒 Terlewat</span>`;
+                } else {
+                    statusBadge = `<span class="ml-2 px-2 py-0.5 text-[10px] font-semibold uppercase bg-slate-200 text-slate-600 rounded-full">⏳ Belum Dibuka</span>`;
+                }
+
+                // 1. Baris Tabel (Untuk Desktop >= 768px)
+                const tr = document.createElement('tr');
+                tr.className = isToday
+                    ? "bg-blue-50/70 ring-1 ring-inset ring-blue-300 transition"
+                    : isPast
+                        ? "bg-slate-100/70 opacity-75"
+                        : "bg-slate-50/40 opacity-65";
+
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-bold ${isToday ? 'text-blue-700' : 'text-slate-400'}">${dayNum}</td>
+                    <td class="p-3">
+                        <div class="font-bold text-slate-800 flex items-center flex-wrap">
+                            <span>${info.dayName}, ${info.dateLabel}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="text-xs text-slate-500 mt-0.5">${escapeHtml(info.task)}</div>
+                    </td>
+                    <td class="p-3 text-center">
+                        <div class="inline-flex items-center space-x-1.5">
+                            <input type="number" step="0.5" min="0" max="24" value="${savedHours}"
+                                ${isLocked ? 'disabled' : ''}
+                                onchange="updateHours(${dayNum}, this.value)"
+                                class="w-16 px-2 py-1 text-center text-sm font-bold border rounded-lg ${isLocked ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-900 border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500'}">
+                            <span class="text-xs text-slate-500 font-semibold">Jam</span>
+                        </div>
+                    </td>
+                    <td class="p-3 text-center">
+                        ${isLocked
+                            ? `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold ${isChecked ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}">
+                                ${isChecked ? '✅ Selesai' : (isPast ? '❌ Kosong' : '🔒 Terkunci')}
+                               </span>`
+                            : `<label class="inline-flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-blue-400 shadow-sm">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="updateCheck(${dayNum}, this.checked)" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer">
+                                <span class="text-xs font-bold text-blue-700">${isChecked ? 'Selesai' : 'Centang'}</span>
+                               </label>`
+                        }
+                    </td>
+                    <td class="p-3">
+                        <input type="number" min="1" max="100" step="1" value="${escapeHtml(savedScoreLatihan)}"
+                            ${isLocked ? 'disabled' : ''}
+                            placeholder="${isLocked ? (savedScoreLatihan ? '' : 'Terkunci') : 'Skor (1-100)...'}"
+                            oninput="updateScoreLatihan(${dayNum}, this)"
+                            class="w-full px-3 py-1.5 text-sm font-bold border rounded-lg transition ${isLocked ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-900 border-blue-300 focus:outline-none focus:border-blue-500'}">
+                    </td>
+                `;
+                tbody.appendChild(tr);
+
+                // 2. Kartu Harian (Untuk Layar HP < 768px — Rapi & Tidak Ketutupan)
+                const card = document.createElement('div');
+                card.className = `p-3.5 rounded-xl border transition ${
+                    isToday
+                        ? 'bg-blue-50/60 border-blue-400 ring-2 ring-blue-500/20 shadow-sm'
+                        : isPast
+                            ? 'bg-slate-100/80 border-slate-200 opacity-80'
+                            : 'bg-slate-50/60 border-slate-200 opacity-70'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="space-y-1">
+                            <div class="font-bold text-slate-900 text-sm flex items-center flex-wrap gap-1">
+                                <span>${info.dayName}, ${info.dateLabel}</span>
+                                ${statusBadge}
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(info.task)}</p>
+                        </div>
+                        ${isLocked
+                            ? `<span class="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold ${isChecked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+                                ${isChecked ? '✅ Selesai' : '🔒 Terkunci'}
+                               </span>`
+                            : `<label class="flex items-center space-x-1.5 bg-white px-3 py-1.5 rounded-lg border ${isChecked ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-blue-400 text-blue-700'} shrink-0 cursor-pointer shadow-sm">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="updateCheck(${dayNum}, this.checked)" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                                <span class="text-xs font-extrabold">${isChecked ? 'Selesai' : 'Centang'}</span>
+                               </label>`
+                        }
+                    </div>
+
+                    <!-- Baris Input Mobile: 2 Kolom Proporsional Agar Tulisan "Jam" & "Skor Latihan" Rapi Tidak Ketutupan -->
+                    <div class="mt-3 pt-2.5 border-t border-slate-200/80 grid grid-cols-2 gap-2.5">
+                        <div class="bg-white/90 p-2 rounded-lg border border-slate-200">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Durasi Belajar</label>
+                            <div class="flex items-center gap-1.5">
+                                <input type="number" step="0.5" min="0" max="24" value="${savedHours}"
+                                    ${isLocked ? 'disabled' : ''}
+                                    onchange="updateHours(${dayNum}, this.value)"
+                                    class="w-full px-2 py-1 text-center text-xs font-extrabold border rounded-md ${isLocked ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-900 border-slate-300'}">
+                                <span class="text-xs font-bold text-slate-600 shrink-0">Jam</span>
+                            </div>
+                        </div>
+                        <div class="bg-white/90 p-2 rounded-lg border border-slate-200">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Skor Latihan (1–100)</label>
+                            <input type="number" min="1" max="100" step="1" value="${escapeHtml(savedScoreLatihan)}"
+                                ${isLocked ? 'disabled' : ''}
+                                placeholder="${isLocked ? '-' : '1 - 100'}"
+                                oninput="updateScoreLatihan(${dayNum}, this)"
+                                class="w-full px-2.5 py-1 text-xs font-extrabold border rounded-md ${isLocked ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-900 border-slate-300'}">
+                        </div>
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            }
+        }
+
+        function updateRemindersAndSummary() {
+            const monthObj = getRealtimeActiveMonthObj();
+            const todayDayNum = Math.min(currentRealDate, monthObj.daysCount);
+            const todayInfo = getDayInfoForMonthDate(monthObj, todayDayNum);
+
+            const todayChecked = localStorage.getItem(getCheckKey(monthObj.id, todayInfo.weekNum, todayInfo.dayIdxInWeek)) === 'true';
+            const todayHours = getSavedHours(monthObj, todayDayNum);
+
+            const tomorrowSchedIdx = (todayInfo.schedIdx + 1) % 7;
+            const tomorrowItem = baseScheduleData[tomorrowSchedIdx];
+
+            document.getElementById('today-day-name').innerText = `${todayInfo.dayName}, ${todayInfo.dateLabel}`;
+            document.getElementById('today-task-desc').innerText = todayInfo.task;
+            document.getElementById('today-hours-display').innerText = `${todayHours} Jam`;
+
+            const statusBadge = document.getElementById('today-status-badge');
+            if (todayChecked) {
+                statusBadge.innerText = 'Selesai ✅';
+                statusBadge.className = 'text-[11px] sm:text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800';
+            } else {
+                statusBadge.innerText = 'Belum Selesai ⏳';
+                statusBadge.className = 'text-[11px] sm:text-xs font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800';
+            }
+
+            document.getElementById('tomorrow-day-name').innerText = tomorrowItem.day;
+            document.getElementById('tomorrow-task-desc').innerText = tomorrowItem.task;
+            document.getElementById('tomorrow-hours-display').innerText = `${tomorrowItem.defaultHours} Jam`;
+
+            // Ringkasan Bulan Berjalan
+            let completedMonth = 0;
+            let completedHoursMonth = 0;
+            for (let d = 1; d <= monthObj.daysCount; d++) {
+                const info = getDayInfoForMonthDate(monthObj, d);
+                if (localStorage.getItem(getCheckKey(monthObj.id, info.weekNum, info.dayIdxInWeek)) === 'true') {
+                    completedMonth++;
+                    completedHoursMonth += getSavedHours(monthObj, d);
+                }
+            }
+
+            const percent = Math.round((completedMonth / monthObj.daysCount) * 100);
+            document.getElementById('summary-month-badge').innerText = `📊 Progres ${monthObj.short}`;
+            document.getElementById('monthly-percent-badge').innerText = `${percent}%`;
+            document.getElementById('progress-text').innerText = `${completedMonth} / ${monthObj.daysCount} Hari`;
+            document.getElementById('monthly-progress-bar').style.width = `${percent}%`;
+            document.getElementById('monthly-hours-display').innerText = `${completedHoursMonth} Jam`;
+        }
+
+        function updateCheck(dayNum, isChecked) {
+            const monthObj = getRealtimeActiveMonthObj();
+            const info = getDayInfoForMonthDate(monthObj, dayNum);
+            if (info.timeStatus !== 'today') return; // Mutlak hanya hari ini yang bisa diubah!
+            localStorage.setItem(getCheckKey(monthObj.id, info.weekNum, info.dayIdxInWeek), isChecked);
+            renderTrackerTable();
+            updateRemindersAndSummary();
+            renderMonthlyCircles();
+        }
+
+        function updateHours(dayNum, value) {
+            const monthObj = getRealtimeActiveMonthObj();
+            const info = getDayInfoForMonthDate(monthObj, dayNum);
+            if (info.timeStatus !== 'today') return;
+            localStorage.setItem(getHoursKey(monthObj.id, info.weekNum, info.dayIdxInWeek), value);
+            renderTrackerTable();
+            updateRemindersAndSummary();
+            renderMonthlyCircles();
+        }
+
+        // Skor Latihan Harian: Paten di range 1 - 100
+        function updateScoreLatihan(dayNum, inputEl) {
+            const monthObj = getRealtimeActiveMonthObj();
+            const info = getDayInfoForMonthDate(monthObj, dayNum);
+            if (info.timeStatus !== 'today') return;
+
+            let rawVal = inputEl.value.trim();
+            if (rawVal !== '') {
+                let num = parseInt(rawVal, 10);
+                if (isNaN(num)) {
+                    rawVal = '';
+                } else {
+                    if (num < 1) num = 1;
+                    if (num > 100) num = 100;
+                    rawVal = String(num);
+                }
+                inputEl.value = rawVal;
+            }
+            localStorage.setItem(getScoreLatihanKey(monthObj.id, info.weekNum, info.dayIdxInWeek), rawVal);
+        }
+
+        // =========================================================================
+        // 5. PENCARIAN PTN / POLITEKNIK NEGERI & JURUSAN IMPIAN (AUTO-SUGGEST)
+        // =========================================================================
+        let selectedCampusObj = null;
+
+        function findCampusFromText(text) {
+            const q = (text || '').trim().toLowerCase();
+            if (!q) return null;
+            return ptnDatabase.find(c =>
+                c.code.toLowerCase() === q ||
+                `${c.code} — ${c.name}`.toLowerCase() === q ||
+                c.name.toLowerCase() === q ||
+                q.startsWith(c.code.toLowerCase() + ' ')
+            ) || null;
+        }
+
+        function handlePtnSearchInput(query) {
+            const dropdown = document.getElementById('ptn-dropdown-list');
+            const q = (query || '').trim().toLowerCase();
+
+            const matches = ptnDatabase.filter(c =>
+                !q ||
+                c.code.toLowerCase().includes(q) ||
+                c.name.toLowerCase().includes(q) ||
+                c.type.toLowerCase().includes(q)
+            );
+
+            if (matches.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = matches.map(c => `
+                <button type="button" onclick="selectPtnCampus('${c.code}')" class="w-full text-left px-3.5 py-2.5 hover:bg-blue-50 transition flex items-center justify-between gap-2">
+                    <div>
+                        <span class="font-extrabold text-blue-700">${escapeHtml(c.code)}</span>
+                        <span class="text-slate-700 font-medium"> — ${escapeHtml(c.name)}</span>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0">${escapeHtml(c.type)}</span>
+                </button>
+            `).join('');
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectPtnCampus(code) {
+            const campus = ptnDatabase.find(c => c.code === code);
+            if (!campus) return;
+            selectedCampusObj = campus;
+
+            const ptnInput = document.getElementById('input-search-ptn');
+            const majorInput = document.getElementById('input-search-major');
+            ptnInput.value = `${campus.code} — ${campus.name}`;
+            document.getElementById('ptn-dropdown-list').classList.add('hidden');
+
+            // Reset dan buka daftar jurusan untuk kampus yang baru dipilih
+            majorInput.value = '';
+            majorInput.focus();
+            handleMajorSearchInput('');
+        }
+
+        function handleMajorSearchInput(query) {
+            const dropdown = document.getElementById('major-dropdown-list');
+            const ptnText = document.getElementById('input-search-ptn').value;
+            const campus = selectedCampusObj || findCampusFromText(ptnText);
+
+            const availableMajors = campus ? campus.majors : [...commonSaintekSoshumMajors, ...commonPoltekMajors];
+            const q = (query || '').trim().toLowerCase();
+
+            const filtered = availableMajors.filter(m => !q || m.toLowerCase().includes(q));
+            if (filtered.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const campusHeader = campus
+                ? `<div class="px-3 py-1.5 bg-indigo-50 text-indigo-800 font-bold text-[11px] sticky top-0">Daftar Jurusan di ${escapeHtml(campus.code)} (${filtered.length} Prodi)</div>`
+                : `<div class="px-3 py-1.5 bg-slate-100 text-slate-600 font-semibold text-[11px] sticky top-0">Pilih Kampus terlebih dahulu untuk filter spesifik</div>`;
+
+            dropdown.innerHTML = campusHeader + filtered.map(m => `
+                <button type="button" onclick="selectMajorItem('${escapeHtml(m)}')" class="w-full text-left px-3.5 py-2 hover:bg-indigo-50 text-slate-800 font-medium transition">
+                    🎓 ${escapeHtml(m)}
+                </button>
+            `).join('');
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectMajorItem(majorName) {
+            document.getElementById('input-search-major').value = majorName;
+            document.getElementById('major-dropdown-list').classList.add('hidden');
+            autoSaveTargetDraft();
+        }
+
+        function autoSaveTargetDraft() {
+            const scoreInput = document.getElementById('input-target-score');
+            const ptnInput = document.getElementById('input-search-ptn');
+            const majorInput = document.getElementById('input-search-major');
+
+            const val = parseFloat(scoreInput.value);
+            const ptnVal = ptnInput.value.trim();
+            const majorVal = majorInput.value.trim();
+
+            if (!isNaN(val) && val >= 1 && val <= 1000) {
+                localStorage.setItem(TARGET_SCORE_KEY, String(val));
+            }
+            if (ptnVal) {
+                localStorage.setItem(TARGET_PTN_KEY, ptnVal);
+            }
+            if (majorVal) {
+                localStorage.setItem(TARGET_MAJOR_KEY, majorVal);
+            }
+            renderTryoutSection();
+        }
+
+        function hideTargetDreamForm() {
+            const formContainer = document.getElementById('target-form-container');
+            const editBtn = document.getElementById('btn-edit-target-dream');
+            if (formContainer) formContainer.classList.add('hidden');
+            if (editBtn) editBtn.classList.remove('hidden');
+        }
+
+        function showTargetDreamForm() {
+            const formContainer = document.getElementById('target-form-container');
+            const editBtn = document.getElementById('btn-edit-target-dream');
+            if (formContainer) formContainer.classList.remove('hidden');
+            if (editBtn) editBtn.classList.add('hidden');
+        }
+
+        // Tutup dropdown jika klik di luar
+        document.addEventListener('click', function(e) {
+            const ptnInput = document.getElementById('input-search-ptn');
+            const ptnDrop = document.getElementById('ptn-dropdown-list');
+            const majorInput = document.getElementById('input-search-major');
+            const majorDrop = document.getElementById('major-dropdown-list');
+
+            if (ptnInput && ptnDrop && !ptnInput.contains(e.target) && !ptnDrop.contains(e.target)) {
+                ptnDrop.classList.add('hidden');
+            }
+            if (majorInput && majorDrop && !majorInput.contains(e.target) && !majorDrop.contains(e.target)) {
+                majorDrop.classList.add('hidden');
+            }
+        });
+
+        function enforceTryoutScoreRange(inputEl) {
+            if (!inputEl) return;
+            let raw = inputEl.value.trim();
+            if (raw === '') return;
+            let num = parseInt(raw, 10);
+            if (isNaN(num)) {
+                inputEl.value = '';
+                return;
+            }
+            if (num < 1) num = 1;
+            if (num > 1000) num = 1000;
+            inputEl.value = String(num);
+        }
+
+        function getTargetScore() {
+            const raw = parseFloat(localStorage.getItem(TARGET_SCORE_KEY));
+            return (!isNaN(raw) && raw >= 1 && raw <= 1000) ? raw : 650;
+        }
+
+        function getTargetPtn() {
+            return (localStorage.getItem(TARGET_PTN_KEY) || '').trim();
+        }
+
+        function getTargetMajor() {
+            return (localStorage.getItem(TARGET_MAJOR_KEY) || '').trim();
+        }
+
+        function getFullTargetDreamLabel() {
+            const ptn = getTargetPtn();
+            const major = getTargetMajor();
+            if (ptn && major) return `${ptn} • ${major}`;
+            return ptn || '';
+        }
+
+        function saveTargetScoreSettings() {
+            const scoreInput = document.getElementById('input-target-score');
+            const ptnInput = document.getElementById('input-search-ptn');
+            const majorInput = document.getElementById('input-search-major');
+
+            enforceTryoutScoreRange(scoreInput);
+            const val = parseFloat(scoreInput.value);
+            const ptnVal = ptnInput.value.trim();
+            const majorVal = majorInput.value.trim();
+
+            if (isNaN(val) || val < 1 || val > 1000) {
+                alert('Target Skor UTBK wajib diisi antara 1 - 1000.');
+                scoreInput.focus();
+                return false;
+            }
+            if (!ptnVal) {
+                alert('Kampus PTN / Politeknik Negeri Impian wajib diisi! Ketik misalnya: ITS, UGM, UI, PENS, atau POLBAN.');
+                ptnInput.focus();
+                return false;
+            }
+            if (!majorVal) {
+                alert('Jurusan / Program Studi Impian wajib dipilih atau diisi!');
+                majorInput.focus();
+                return false;
+            }
+
+            localStorage.setItem(TARGET_SCORE_KEY, String(val));
+            localStorage.setItem(TARGET_PTN_KEY, ptnVal);
+            localStorage.setItem(TARGET_MAJOR_KEY, majorVal);
+
+            // Otomatis sembunyikan form input dan tombol simpan setelah dipilih
+            hideTargetDreamForm();
+            renderTryoutSection();
+            return true;
+        }
+
+        // =========================================================================
+        // 6. DIAGRAM LINGKARAN SKOR TO TERAKHIR & EVALUASI TRYOUT
+        // =========================================================================
+        function getScoreCategory(score, subtestName) {
+            const num = parseFloat(score) || 0;
+            const target = getTargetScore();
+            const yellowThreshold = Math.max(300, target - 100);
+            const diff = num - target;
+            const diffText = diff >= 0 ? `+${diff} poin di atas target (${target})` : `Kurang ${Math.abs(diff)} poin dari target (${target})`;
+            const subtestInfo = (subtestName && subtestName !== 'auto' && subtestName !== 'Umum / Semua Subtes')
+                ? ` terutama pada subtes <strong>${escapeHtml(subtestName)}</strong>`
+                : '';
+
+            if (num < yellowThreshold) {
+                return {
+                    level: 'merah',
+                    shortLabel: 'Butuh Penguatan',
+                    strokeColor: '#ef4444',
+                    diffText,
+                    warningMessage: `⚠️ <strong>Peringatan — Butuh Penguatan:</strong> Skor masih di bawah standar target${subtestInfo}. Fokus perkuat kembali konsep dasar dan latihan soal bertahap.`,
+                    badgeBg: 'bg-red-100',
+                    badgeText: 'text-red-800',
+                    badgeBorder: 'border-red-300',
+                    dotColor: 'bg-red-600',
+                    cardBg: 'bg-red-50/70',
+                    cardBorder: 'border-red-200',
+                    scoreText: 'text-red-700'
+                };
+            } else if (num < target) {
+                return {
+                    level: 'kuning',
+                    shortLabel: 'Standard • Butuh Improve',
+                    strokeColor: '#f59e0b',
+                    diffText,
+                    warningMessage: `⚡ <strong>Standard — Butuh Improve:</strong> Skor sudah mendekati target${subtestInfo}. Tingkatkan lagi ketelitian dan perbanyak latihan variasi soal HOTS.`,
+                    badgeBg: 'bg-amber-100',
+                    badgeText: 'text-amber-800',
+                    badgeBorder: 'border-amber-300',
+                    dotColor: 'bg-amber-500',
+                    cardBg: 'bg-amber-50/70',
+                    cardBorder: 'border-amber-200',
+                    scoreText: 'text-amber-700'
+                };
+            } else {
+                return {
+                    level: 'hijau',
+                    shortLabel: 'Stabil • Perbanyak TO',
+                    strokeColor: '#10b981',
+                    diffText,
+                    warningMessage: `✅ <strong>Stabil:</strong> Skor sudah mencapai/melampaui target! Perbanyak frekuensi Tryout untuk memperkuat pemahaman dan menjaga konsistensi.`,
+                    badgeBg: 'bg-emerald-100',
+                    badgeText: 'text-emerald-800',
+                    badgeBorder: 'border-emerald-300',
+                    dotColor: 'bg-emerald-600',
+                    cardBg: 'bg-emerald-50/70',
+                    cardBorder: 'border-emerald-200',
+                    scoreText: 'text-emerald-700'
+                };
+            }
+        }
+
+        function getTryoutRecords() {
+            try {
+                const raw = localStorage.getItem(TRYOUT_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveTryoutRecords(records) {
+            localStorage.setItem(TRYOUT_STORAGE_KEY, JSON.stringify(records));
+        }
+
+        function toggleCustomSource(val) {
+            const customInput = document.getElementById('to-input-source-custom');
+            if (val === 'Lainnya') {
+                customInput.classList.remove('hidden');
+                customInput.focus();
+            } else {
+                customInput.classList.add('hidden');
+            }
+        }
+
+        function addTryoutRecord() {
+            if (!getTargetPtn() || !getTargetMajor()) {
+                if (!saveTargetScoreSettings()) return;
+            }
+
+            const dateVal = document.getElementById('to-input-date').value;
+            const sourceSelect = document.getElementById('to-input-source').value;
+            const sourceCustom = document.getElementById('to-input-source-custom').value.trim();
+            const scoreInputEl = document.getElementById('to-input-score');
+            enforceTryoutScoreRange(scoreInputEl);
+            const scoreVal = parseFloat(scoreInputEl.value);
+            const weakSubtest = document.getElementById('to-input-weak-subtest').value;
+
+            if (!dateVal) {
+                alert('Silakan pilih Tanggal Tryout terlebih dahulu.');
+                return;
+            }
+            if (isNaN(scoreVal) || scoreVal < 1 || scoreVal > 1000) {
+                alert('Silakan masukkan Hasil / Skor Tryout yang valid (paten di rentang 1 - 1000).');
+                scoreInputEl.focus();
+                return;
+            }
+
+            const finalSource = (sourceSelect === 'Lainnya' && sourceCustom) ? sourceCustom : sourceSelect;
+            const records = getTryoutRecords();
+
+            records.unshift({
+                id: 'to_' + Date.now(),
+                date: dateVal,
+                source: finalSource,
+                score: scoreVal,
+                weakSubtest: weakSubtest || 'Penalaran Umum (PU)'
+            });
+
+            saveTryoutRecords(records);
+            scoreInputEl.value = '';
+            renderTryoutSection();
+        }
+
+        function formatIndoDate(dateStr) {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const mIdx = parseInt(parts[1], 10) - 1;
+            return `${parseInt(parts[2], 10)} ${monthsIndo[mIdx] || parts[1]} ${parts[0]}`;
+        }
+
+        function renderTryoutSection() {
+            const records = getTryoutRecords();
+            const target = getTargetScore();
+            const dreamLabel = getFullTargetDreamLabel();
+            const yellowMin = Math.max(300, target - 100);
+
+            document.getElementById('banner-target-score').innerText = String(target);
+            const mobileTargetEl = document.getElementById('header-mobile-target');
+            if (mobileTargetEl) mobileTargetEl.innerText = String(target);
+
+            const headerSub = document.getElementById('header-ptn-subtitle');
+            if (headerSub) {
+                headerSub.innerText = dreamLabel
+                    ? `Target: ${dreamLabel} (${target})`
+                    : `Persiapan UTBK ${targetUtbkYear} • Target Skor ${target}`;
+            }
+
+            document.getElementById('target-dream-title').innerText = `Target Skor UTBK: ${target}`;
+            const ptnDisplay = document.getElementById('target-dream-ptn-display');
+            if (dreamLabel) {
+                ptnDisplay.innerHTML = `🏛️ Kampus & Prodi Impian: <strong class="text-amber-300">${escapeHtml(dreamLabel)}</strong>`;
+            } else {
+                ptnDisplay.innerHTML = `<span class="text-amber-300 font-semibold">⚠️ Wajib Diisi:</span> Cari dan pilih PTN / Politeknik Negeri beserta Jurusan Impianmu di bawah ini.`;
+            }
+
+            document.getElementById('legend-merah-title').innerHTML = `MERAH (Skor &lt; ${yellowMin})`;
+            document.getElementById('legend-kuning-title').innerHTML = `KUNING (Skor ${yellowMin} – ${target - 1})`;
+            document.getElementById('legend-hijau-title').innerHTML = `HIJAU (Skor &ge; ${target})`;
+
+            const countEl = document.getElementById('to-stat-count');
+            const latestEl = document.getElementById('to-stat-latest');
+            const bestEl = document.getElementById('to-stat-best');
+
+            const circleEl = document.getElementById('target-circle-progress');
+            const circlePctEl = document.getElementById('target-circle-percent');
+            const circleFracEl = document.getElementById('target-circle-fraction');
+            const circleStatusEl = document.getElementById('target-circle-status');
+            const circleTrendEl = document.getElementById('target-circle-trend');
+
+            const radius = 50;
+            const circumference = 2 * Math.PI * radius;
+
+            if (records.length === 0) {
+                countEl.innerText = '0';
+                latestEl.innerText = '0';
+                bestEl.innerText = '0';
+
+                circleEl.style.strokeDashoffset = String(circumference);
+                circleEl.setAttribute('stroke', '#38bdf8');
+                circlePctEl.innerText = '0%';
+                circleFracEl.innerText = `0 / ${target}`;
+                circleStatusEl.innerText = `Belum ada TO (Target: ${target})`;
+                circleStatusEl.className = 'mt-2 text-xs font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700';
+                circleTrendEl.innerText = 'Masukkan skor TO terbaru untuk melihat progres naik/turun.';
+            } else {
+                const latestRec = records[0];
+                const latestScore = parseFloat(latestRec.score) || 0;
+                const scores = records.map(r => parseFloat(r.score) || 0);
+                const best = Math.max(...scores);
+
+                countEl.innerText = String(records.length);
+                latestEl.innerText = String(latestScore);
+                bestEl.innerText = String(best);
+
+                const rawPct = Math.round((latestScore / target) * 100);
+                const visualPct = Math.max(0, Math.min(100, rawPct));
+                const offset = circumference - (visualPct / 100) * circumference;
+                const latestCat = getScoreCategory(latestScore, latestRec.weakSubtest);
+
+                circleEl.style.strokeDashoffset = offset.toFixed(2);
+                circleEl.setAttribute('stroke', latestCat.strokeColor);
+                circlePctEl.innerText = `${rawPct}%`;
+                circleFracEl.innerText = `${latestScore} / ${target}`;
+
+                const diffLatest = latestScore - target;
+                if (diffLatest >= 0) {
+                    circleStatusEl.innerText = `🎉 Target Tercapai! (+${diffLatest} poin di atas ${target})`;
+                    circleStatusEl.className = 'mt-2 text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
+                } else {
+                    circleStatusEl.innerText = `Kurang ${Math.abs(diffLatest)} poin lagi menuju ${target}`;
+                    circleStatusEl.className = latestCat.level === 'kuning'
+                        ? 'mt-2 text-xs font-bold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40'
+                        : 'mt-2 text-xs font-bold px-3 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-400/40';
+                }
+
+                if (records.length > 1) {
+                    const prevScore = parseFloat(records[1].score) || 0;
+                    const delta = latestScore - prevScore;
+                    if (delta > 0) {
+                        circleTrendEl.innerHTML = `<span class="text-emerald-400 font-bold">📈 Naik +${delta} poin</span> dibanding TO sebelumnya (${prevScore} → ${latestScore})`;
+                    } else if (delta < 0) {
+                        circleTrendEl.innerHTML = `<span class="text-red-400 font-bold">📉 Turun ${delta} poin</span> dibanding TO sebelumnya (${prevScore} → ${latestScore})`;
+                    } else {
+                        circleTrendEl.innerHTML = `<span class="text-amber-300 font-bold">➖ Tetap (0 poin)</span> sama seperti TO sebelumnya (${latestScore})`;
+                    }
+                } else {
+                    circleTrendEl.innerHTML = `TO Pertama dari <strong>${escapeHtml(latestRec.source)}</strong> (${formatIndoDate(latestRec.date)})`;
+                }
+            }
+
+            const tbody = document.getElementById('tryout-table-body');
+            const mobileTryoutContainer = document.getElementById('tryout-mobile-cards');
+
+            if (records.length === 0) {
+                const emptyMsg = `Belum ada riwayat skor Tryout. Isi Tanggal, Sumber Tryout, dan Skor di atas untuk melihat status warna dan progres lingkaranmu.`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 text-sm">${emptyMsg}</td></tr>`;
+                mobileTryoutContainer.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-300">${emptyMsg}</div>`;
+                return;
+            }
+
+            tbody.innerHTML = records.map((rec, idx) => {
+                const cat = getScoreCategory(rec.score, rec.weakSubtest);
+
+                return `
+                    <tr class="${cat.cardBg} hover:bg-slate-50 transition align-middle">
+                        <td class="p-3 text-center font-semibold text-slate-500">${idx + 1}</td>
+                        <td class="p-3 font-medium text-slate-800 whitespace-nowrap">${formatIndoDate(rec.date)}</td>
+                        <td class="p-3">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-white border border-slate-200 text-slate-700 shadow-sm">
+                                ${escapeHtml(rec.source)}
+                            </span>
+                        </td>
+                        <td class="p-3 text-center">
+                            <div class="inline-flex flex-col items-center px-3 py-1.5 rounded-xl border ${cat.badgeBg} ${cat.badgeBorder} min-w-[140px]">
+                                <span class="text-xl font-extrabold ${cat.scoreText}">${rec.score}</span>
+                                <span class="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${cat.badgeText}">
+                                    <span class="w-2 h-2 rounded-full ${cat.dotColor}"></span>
+                                    ${cat.shortLabel}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="p-3 text-xs leading-relaxed">
+                            <div class="text-slate-800">${cat.warningMessage}</div>
+                            <div class="text-[11px] text-slate-500 font-semibold mt-1">${cat.diffText}</div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            mobileTryoutContainer.innerHTML = records.map((rec, idx) => {
+                const cat = getScoreCategory(rec.score, rec.weakSubtest);
+
+                return `
+                    <div class="p-3.5 rounded-xl border ${cat.cardBorder} ${cat.cardBg} space-y-2.5 shadow-sm">
+                        <div class="flex items-center justify-between gap-2">
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-bold text-slate-500">#${idx + 1}</span>
+                                    <span class="px-2 py-0.5 rounded text-xs font-bold bg-white border border-slate-200 text-slate-800">${escapeHtml(rec.source)}</span>
+                                    <span class="text-xs text-slate-500 font-medium">${formatIndoDate(rec.date)}</span>
+                                </div>
+                                <div class="text-[11px] text-slate-600 font-semibold mt-1">${cat.diffText}</div>
+                            </div>
+                            <div class="text-right flex items-center">
+                                <div class="px-3 py-1 rounded-xl border ${cat.badgeBg} ${cat.badgeBorder} text-center">
+                                    <div class="text-lg font-extrabold leading-none ${cat.scoreText}">${rec.score}</div>
+                                    <div class="text-[9px] font-bold uppercase ${cat.badgeText} mt-0.5">${cat.level.toUpperCase()}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-xs leading-relaxed bg-white/90 p-2.5 rounded-lg border border-slate-200/60 text-slate-800">
+                            ${cat.warningMessage}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // =========================================================================
+        // 7. RENDER RINCIAN JADWAL & FITUR "SESUAIKAN JADWALMU SENDIRI"
+        // =========================================================================
+        function renderScheduleTab() {
+            const listEl = document.getElementById('schedule-display-list');
+            const editorEl = document.getElementById('custom-schedule-editor');
+
+            listEl.innerHTML = baseScheduleData.map(item => `
+                <div class="border-l-4 ${item.color} pl-3.5 py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm sm:text-base">${escapeHtml(item.day)}: ${escapeHtml(item.topic)}</h3>
+                        <p class="text-slate-600 text-xs sm:text-sm mt-0.5">${escapeHtml(item.task)}</p>
+                    </div>
+                    <span class="text-xs font-semibold ${item.badge} px-2.5 py-1 rounded-md shrink-0 w-fit">Target: ${item.defaultHours} Jam</span>
+                </div>
+            `).join('');
+
+            editorEl.innerHTML = baseScheduleData.map((item, idx) => `
+                <div class="p-3 sm:p-3.5 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+                    <div class="md:col-span-2 font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs flex items-center justify-center font-extrabold">${idx + 1}</span>
+                        <span>${escapeHtml(item.day)}</span>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Fokus Subtes / Topik</label>
+                        <input type="text" id="cust-topic-${idx}" value="${escapeHtml(item.topic)}"
+                            class="w-full px-2.5 py-1.5 text-xs sm:text-sm font-semibold bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="md:col-span-5">
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Rincian Agenda Belajar</label>
+                        <input type="text" id="cust-task-${idx}" value="${escapeHtml(item.task)}"
+                            class="w-full px-2.5 py-1.5 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Target Jam</label>
+                        <div class="flex items-center gap-1.5">
+                            <input type="number" id="cust-hours-${idx}" step="0.5" min="0" max="24" value="${item.defaultHours}"
+                                class="w-full px-2 py-1.5 text-center text-xs sm:text-sm font-bold bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                            <span class="text-xs text-slate-500 font-semibold">Jam</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleCustomScheduleEditor(forceOpen) {
+            const panel = document.getElementById('custom-schedule-panel');
+            const btn = document.getElementById('btn-toggle-custom-schedule');
+            if (!panel || !btn) return;
+
+            const isCurrentlyHidden = panel.classList.contains('hidden');
+            const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : isCurrentlyHidden;
+
+            if (shouldOpen) {
+                panel.classList.remove('hidden');
+                btn.innerText = '✖️ Tutup Editor';
+                btn.className = 'px-3.5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition shrink-0';
+            } else {
+                panel.classList.add('hidden');
+                btn.innerText = '➕ Sesuaikan Jadwal';
+                btn.className = 'px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition shrink-0';
+            }
+        }
+
+        function saveCustomSchedule() {
+            const updated = baseScheduleData.map((item, idx) => {
+                const tVal = document.getElementById(`cust-topic-${idx}`).value.trim() || item.topic;
+                const dVal = document.getElementById(`cust-task-${idx}`).value.trim() || item.task;
+                const hVal = parseFloat(document.getElementById(`cust-hours-${idx}`).value);
+                return {
+                    ...item,
+                    topic: tVal,
+                    task: dVal,
+                    defaultHours: !isNaN(hVal) && hVal >= 0 ? hVal : item.defaultHours
+                };
+            });
+
+            localStorage.setItem(CUSTOM_SCHEDULE_KEY, JSON.stringify(updated));
+            baseScheduleData = getActiveScheduleData();
+            renderAll();
+            toggleCustomScheduleEditor(false);
+        }
+
+        function resetCustomScheduleToDefault() {
+            if (!confirm('Kembalikan jadwal belajar ke rekomendasi default awal?')) return;
+            localStorage.removeItem(CUSTOM_SCHEDULE_KEY);
+            baseScheduleData = getActiveScheduleData();
+            renderAll();
+            toggleCustomScheduleEditor(false);
+        }
+
+        function initInputs() {
+            const dateInput = document.getElementById('to-input-date');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = nowRealtime.toISOString().split('T')[0];
+            }
+
+            document.getElementById('input-target-score').value = getTargetScore();
+            const savedPtn = getTargetPtn();
+            const savedMajor = getTargetMajor();
+
+            // Migrasi jika sebelumnya user pernah menyimpan gabungan PTN - Jurusan di TARGET_PTN_KEY
+            if (savedPtn && !savedMajor && savedPtn.includes('-')) {
+                const parts = savedPtn.split('-');
+                const pName = parts[0].trim();
+                const mName = parts.slice(1).join('-').trim();
+                const matchedCampus = findCampusFromText(pName);
+                if (matchedCampus) {
+                    selectedCampusObj = matchedCampus;
+                    document.getElementById('input-search-ptn').value = `${matchedCampus.code} — ${matchedCampus.name}`;
+                } else {
+                    document.getElementById('input-search-ptn').value = pName;
+                }
+                document.getElementById('input-search-major').value = mName;
+                localStorage.setItem(TARGET_PTN_KEY, document.getElementById('input-search-ptn').value);
+                localStorage.setItem(TARGET_MAJOR_KEY, mName);
+            } else {
+                document.getElementById('input-search-ptn').value = savedPtn;
+                document.getElementById('input-search-major').value = savedMajor;
+                selectedCampusObj = findCampusFromText(savedPtn);
+            }
+
+            // Jika Target Impian sudah pernah disimpan sebelumnya, otomatis sembunyikan form agar tampilan ringkas
+            if (getTargetPtn() && getTargetMajor()) {
+                hideTargetDreamForm();
+            }
+        }
+
+        function renderAll() {
+            renderMonthlyCircles();
+            renderTrackerTable();
+            updateRemindersAndSummary();
+            renderTryoutSection();
+            renderScheduleTab();
+        }
+
+        // =========================================================================
+        // 8. POP-UP DONASI SEIKHLASNYA (QRIS) & KIRIM SARAN KE WHATSAPP
+        // =========================================================================
+        const DEVELOPER_WA_NUMBER = '6282244797292';
+
+        let qrisModalCloseTimer = null;
+
+        function openQrisDonateModal() {
+            const modal = document.getElementById('qris-donate-modal');
+            if (!modal) return;
+            if (qrisModalCloseTimer) {
+                clearTimeout(qrisModalCloseTimer);
+                qrisModalCloseTimer = null;
+            }
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    modal.classList.add('qris-modal-open');
+                });
+            });
+        }
+
+        function closeQrisDonateModal() {
+            const modal = document.getElementById('qris-donate-modal');
+            if (!modal) return;
+            modal.classList.remove('qris-modal-open');
+            document.body.style.overflow = '';
+            qrisModalCloseTimer = setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 280);
+        }
+
+        function handleQrisModalBackdropClick(event) {
+            if (event.target && event.target.id === 'qris-donate-modal') {
+                closeQrisDonateModal();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeQrisDonateModal();
+            }
+        });
+
+        function sendFeedbackToWhatsApp(inputId) {
+            const inputEl = document.getElementById(inputId);
+            const rawText = inputEl ? inputEl.value.trim() : '';
+
+            if (!rawText) {
+                alert('Tulis masukan, ide fitur, atau saranmu terlebih dahulu di kolom teks ya kak 😊');
+                if (inputEl) inputEl.focus();
+                return;
+            }
+
+            const ptnTarget = getTargetPtn();
+            const majorTarget = getTargetMajor();
+            const targetInfo = (ptnTarget && majorTarget) ? `\n🎯 *Target:* ${ptnTarget} — ${majorTarget}` : '';
+
+            const message =
+                `Halo Kak Admin MDC.Dev 👋\n` +
+                `Saya pengguna aplikasi *UTBK Progres Tracker* ingin berdiskusi / memberikan masukan:${targetInfo}\n\n` +
+                `💬 *Masukan / Saran:*\n${rawText}`;
+
+            const waUrl = `https://wa.me/${DEVELOPER_WA_NUMBER}?text=${encodeURIComponent(message)}`;
+            window.open(waUrl, '_blank', 'noopener,noreferrer');
+
+            if (inputEl) {
+                inputEl.value = '';
+            }
+        }
+
+        // =========================================================================
+        // 9. REGISTRASI SERVICE WORKER & AUTO-UPDATE NETLIFY / PWA
+        // =========================================================================
+        let deferredPwaPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPwaPrompt = e;
+            const installBtn = document.getElementById('btn-install-pwa');
+            if (installBtn) installBtn.classList.remove('hidden');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPwaPrompt = null;
+            const installBtn = document.getElementById('btn-install-pwa');
+            if (installBtn) installBtn.classList.add('hidden');
+        });
+
+        async function installPwaApp() {
+            if (!deferredPwaPrompt) return;
+            deferredPwaPrompt.prompt();
+            await deferredPwaPrompt.userChoice;
+            deferredPwaPrompt = null;
+            const installBtn = document.getElementById('btn-install-pwa');
+            if (installBtn) installBtn.classList.add('hidden');
+        }
+
+        window.onload = function() {
+            initEvergreenEdition();
+            initInputs();
+            renderAll();
+            switchTab(activeTab);
+
+            if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+                let refreshingSw = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!refreshingSw) {
+                        refreshingSw = true;
+                        window.location.reload();
+                    }
+                });
+
+                navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+                    .then((reg) => {
+                        reg.update().catch(() => {});
+                        document.addEventListener('visibilitychange', () => {
+                            if (document.visibilityState === 'visible') {
+                                reg.update().catch(() => {});
+                            }
+                        });
+                    })
+                    .catch(() => {});
+            }
+
+            // Pantau pergantian hari & pergantian tahun UTBK secara otomatis (misal setelah UTBK selesai -> otomatis naik tahun berikutnya)
+            setInterval(function() {
+                const prevDate = currentRealDate;
+                const prevTargetYear = targetUtbkYear;
+                initEvergreenEdition();
+                if (currentRealDate !== prevDate || targetUtbkYear !== prevTargetYear) {
+                    renderAll();
+                }
+            }, 60000);
+        };
+    </script>
+
+</body>
+</html>
