@@ -1,4 +1,4 @@
-const CACHE_NAME = 'utbk-tracker-cache-v2';
+const CACHE_NAME = 'utbk-tracker-cache-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
